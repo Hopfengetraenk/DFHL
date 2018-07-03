@@ -2,7 +2,7 @@
 
 DFHL - Duplicate File Hard Linker, a small tool to gather some space
     from duplicate files on your hard disk
-Copyright (C) 2004, 2005 Jens Scheffler & Oliver Schneider
+Copyright (C) 2004-2012 Jens Scheffler & Oliver Schneider & Hans Schmidts
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,10 +22,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // Global Definitions
 // *******************************************
-#define LOG_ERROR				1
-#define LOG_INFO				0
-#define LOG_VERBOSE				-1
-#define LOG_DEBUG				-2
+#define LOG_ERROR               1
+#define LOG_INFO                0
+#define LOG_VERBOSE             -1
+#define LOG_DEBUG               -2
 
 #define CLASS_TYPE_FILE         1
 #define CLASS_TYPE_PATH         2
@@ -33,61 +33,77 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // Global Variables
 // *******************************************
 
+
+/** Flag to write error messages to standard output (2012-10-15  HaSchm) */
+extern bool boNoStdErr;
+
+/** Logging Level for the console output */
+extern int logLevel;
+
 /**
  * Some global Variables for Statistics stuff...
  */
 class Statistics {
 public:
-	static Statistics* getInstance();
+    static Statistics* getInstance();
 
-	Statistics();
+    Statistics();
 
-	/** Variable for statistic collection */
-	int fileCompares;
-	int hashCompares;
-	int hashComparesHit1;
-	int hashComparesHit2;
-	int hashComparesHit3;
-	int fileMetaDataMismatch;
-	int fileAlreadyLinked;
-	int fileContentDifferFirstBlock;
-	int fileContentDifferLater;
-	int fileContentSame;
-	int fileCompareProblems;
-	int hashesCalculated;
-	int directoriesFound;
-	int filesFound;
-	INT64 bytesRead;
-	int filesOpened;
-	int filesClosed;
-	int fileOpenProblems;
-	int pathObjCreated;
-	int pathObjDestroyed;
-	int fileObjCreated;
-	int fileObjDestroyed;
-	int unbufferedFileStreamObjCreated;
-	int unbufferedFileStreamObjDestroyed;
-	int fileSystemObjCreated;
-	int fileSystemObjDestroyed;
-	int hardLinks;
-	int hardLinksSuccess;
-	int collectionObjCreated;
-	int collectionObjDestroyed;
-	int itemObjCreated;
-	int itemObjDestroyed;
-	int referenceCounterObjCreated;
-	int referenceCounterObjDestroyed;
-	int sizeGroupObjCreated;
-	int sizeGroupObjDestroyed;
-	int sortedFileCollectionObjCreated;
-	int sortedFileCollectionObjDestroyed;
-	int duplicateEntryObjCreated;
-	int duplicateEntryObjDestroyed;
-	int duplicateFileCollectionObjCreated;
-	int duplicateFileCollectionObjDestroyed;
-	int duplicateFileHardLinkerObjCreated;
-	int duplicateFileHardLinkerObjDestroyed;
-	int fileTooSmall;
+    /** Variable for statistic collection */
+    INT64 i64FileCompares;
+    INT64 i64HashCompares;
+    INT64 i64HashComparesHit1;
+    INT64 i64HashComparesHit2;
+    INT64 i64HashComparesHit3;
+    /* INT64 i64FileMetaDataMismatch;  2012-10-12  HaSchm */
+    INT64 i64FileNameMismatch;
+    INT64 i64FileAttributeMismatch;
+    INT64 i64FileMTimeMismatch;
+
+    INT64 i64FileAlreadyLinked;
+    INT64 i64FileContentDifferFirstBlock;
+    INT64 i64FileContentDifferLater;
+    INT64 i64FileContentSame;
+    int fileCompareProblems;
+    INT64 i64HashesCalculated;
+    int directoryOpenProblems; /* 2012-10-16  HaSchm */
+    int directoriesFound;  /* incl. junctions */
+    int junctionsFound;  /* 2012-10-16  HaSchm */
+    INT64 i64FilesFound;  /* incl. hidden or system files and incl small files */
+    INT64 i64HSFilesFound;  /* 2012-10-16  HaSchm */
+    INT64 i64BytesRead;
+    INT64 i64FilesOpened;
+    INT64 i64FilesClosed;
+    int fileOpenProblems;
+    int pathObjCreated;
+    int pathObjDestroyed;
+    INT64 i64FileObjCreated;
+    INT64 i64FileObjDestroyed;
+    INT64 i64UnbufferedFileStreamObjCreated;
+    INT64 i64UnbufferedFileStreamObjDestroyed;
+    INT64 i64FileSystemObjCreated;
+    INT64 i64FileSystemObjDestroyed;
+    INT64 i64HardLinks;  /* errors+success */
+    INT64 i64HardLinksSuccess;
+    INT64 i64BytesSaved;  /* 2012-10-12  HaSchm */
+    INT64 i64CollectionObjCreated;
+    INT64 i64CollectionObjDestroyed;
+    INT64 i64ItemObjCreated;
+    INT64 i64ItemObjDestroyed;
+    INT64 i64ReferenceCounterObjCreated;
+    INT64 i64ReferenceCounterObjDestroyed;
+    INT64 i64SizeGroupObjCreated;
+    INT64 i64SizeGroupObjDestroyed;
+    INT64 i64SortedFileCollectionObjCreated;
+    INT64 i64SortedFileCollectionObjDestroyed;
+    INT64 i64DuplicateEntryObjCreated;
+    INT64 i64DuplicateEntryObjDestroyed;
+    INT64 i64DuplicateFileCollectionObjCreated;
+    INT64 i64DuplicateFileCollectionObjDestroyed;
+    INT64 i64DuplicateFileHardLinkerObjCreated;
+    INT64 i64DuplicateFileHardLinkerObjDestroyed;
+    INT64 i64FileTooSmall;
+    INT64 i64TotalSmallFileSize;
 };
 
 // Global Functions
@@ -99,6 +115,8 @@ public:
 void logError(LPCWSTR message, ...);
 
 void logError(DWORD errNumber, LPCWSTR message, ...);
+
+void logErrorInfo(LPCWSTR message, ...);  /* 2012-10-15  HaSchm */
 
 void logInfo(LPCWSTR message, ...);
 
@@ -125,23 +143,23 @@ LPWSTR cleanString(LPWSTR string);
  */
 class ReferenceCounter {
 private:
-	int numberOfReferences;
+    int numberOfReferences;
 protected:
-	int classType; // signature of the class type for object following and correct destruction
+    int classType; // signature of the class type for object following and correct destruction
 public:
-	ReferenceCounter();
+    ReferenceCounter();
 
-	~ReferenceCounter();
+    ~ReferenceCounter();
 
-	/**
-	 * Signals the object that a further reference is created
-	 */
-	void addReference();
+    /**
+     * Signals the object that a further reference is created
+     */
+    void addReference();
 
-	/**
-	 * Signals the object that a reference is removed - the object needs to check whether it can be destroyed
-	 */
-	void removeReference();
+    /**
+     * Signals the object that a reference is removed - the object needs to check whether it can be destroyed
+     */
+    void removeReference();
 };
 
 /** Item implementation for the collection */
@@ -152,26 +170,33 @@ class Item;
  */
 class Collection {
 private:
-	int itemCount;
-	Item* root;
-	Item* last;
-	Item* nextItem;
+    int itemCount;
+    Item* root;
+    Item* last;
+    Item* nextItem;
 public:
-	void append(void* data);
+    /* append/push data to end of collection (nextItem = root) */
+    void append(void* data);
 
-	void push(void* data);
+    /* append/push data to end of collection (nextItem = root) */
+    void push(void* data);
 
-	void addAll(Collection* items);
+    /* add/move all elements from items to end of collection (pop items; push this) */
+    void addAll(Collection* items);
 
-	void* pop();
+    /* return and remove first item from collection (nextItem = root) */
+    void* pop();
 
-	void* next();
+    /* return next item from collection (nextItem = nextItem->next) */
+    void* next();
 
-	void* item(int index);
+    /* return item at given index from collection (nextItem = item[index+1]) */
+    void* item(int index);
 
-	int getSize();
+    /* return number of items in collection */
+    int getSize();
 
-	Collection();
+    Collection();
 
-	~Collection();
+    ~Collection();
 };

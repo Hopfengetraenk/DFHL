@@ -28,8 +28,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,0
- PRODUCTVERSION 2,0,0,0
+ FILEVERSION 2,5,0,0
+ PRODUCTVERSION 2,5,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -44,17 +44,17 @@ BEGIN
     BEGIN
         BLOCK "040704b0"
         BEGIN
-            VALUE "Comments", "Created by Jens Scheffler and Oliver Schneider, http://www.jensscheffler.de\0"
+            VALUE "Comments", "Created by Jens Scheffler, Oliver Schneider, http://www.jensscheffler.de, modified by Hans Schmidts\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Tool to create hard links of files on the disk and save space\0"
-            VALUE "FileVersion", "2, 0, 0, 0\0"
+            VALUE "FileVersion", "2, 5, 0, 0\0"
             VALUE "InternalName", "Duplicate File Hard Linker\0"
-            VALUE "LegalCopyright", "Copyright © 2004, 2005\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2012\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "DFHL.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "DFHL\0"
-            VALUE "ProductVersion", "2, 0, 0, 0\0"
+            VALUE "ProductVersion", "2, 5, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -80,7 +80,7 @@ IDI_ICON1               ICON    DISCARDABLE     "ICON1.ICO"
 
 
 /////////////////////////////////////////////////////////////////////////////
-// German (Germany) resources
+// Deutsch (Deutschland) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
@@ -113,7 +113,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // German (Germany) resources
+#endif    // Deutsch (Deutschland) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

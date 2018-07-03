@@ -71,7 +71,7 @@
        must no be misused to force a project to use the license you chose for
        this module!
        OSI-approved licenses can be found at this website:
-	   http://www.opensource.org/licenses/
+       http://www.opensource.org/licenses/
 
        You have the choice to make this module compatible with your own open
        source or commercial or whatever project by choosing the right license.
@@ -126,21 +126,21 @@
  *  Finally it's necessary to set WINVER 0x0400 to remove all conflicts with
  *  Windows 2000 (and XP, and ...) with this custom function.
  *  This is self-explanatory since this function replaces an API introduced
- *  with Windows 2000, whereas the smae functionality can be achieved on NT4
+ *  with Windows 2000, whereas the same functionality can be achieved on NT4
  *  already. Hence this module makes only sense in conjunction with programs
  *  that try to be backwards-compatible to Windows NT 4.0!
  *
  *  This module is thought to mask out NT4/W2K differences with respect to
  *  CreateHardlink().
  *
- *  You can configure the behavior of the module by two #define statements in
+ *  You can configure the behavior of the module by two \#define statements in
  *  the Hardlink.h header file. These statements are PREFERAPI and RTDL.
  *  Refer to the header file for details.
  **/
 
 #include <Windows.h>
 #pragma warning( disable : 4005 )
-#include <ntstatus.h>
+// 2012-01-23  HaSchm: #include <ntstatus.h>
 #pragma warning( default : 4005 )
 #include "Hardlink.h"
 
@@ -153,14 +153,21 @@
  *
  ******************************************************************************/
 
+typedef ULONG ULONG_PTR;  // 2012-01-23  HaSchm
+//typedef unsigned __int3264 ULONG_PTR;
+//The keyword __int3264 specifies an integral type that has the following properties:
+//    It is 32-bit on 32-bit platforms
+//    It is 64-bit on 64-bit platforms
+
+
 // Type for status information in the native API
 typedef LONG NTSTATUS;
 
 // This is a counted unicode character string
 typedef struct _UNICODE_STRING {
-	USHORT Length;
-	USHORT MaximumLength;
-	PWSTR  Buffer;
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR  Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
 
 // Constant unicode string
@@ -168,54 +175,54 @@ typedef const UNICODE_STRING *PCUNICODE_STRING;
 
 // I/O status information
 typedef struct _IO_STATUS_BLOCK {
-	union {
-		NTSTATUS Status;
-		PVOID    Pointer;
-	};
-	ULONG_PTR Information;
+    union {
+        NTSTATUS Status;
+        PVOID    Pointer;
+    };
+    ULONG_PTR Information;
 } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
 // Enum type to declare all file information classes (NT, W2K, WXP)
 typedef enum _FILE_INFORMATION_CLASS {
-	FileDirectoryInformation       = 1,
-	FileFullDirectoryInformation,   // 2
-	FileBothDirectoryInformation,   // 3
-	FileBasicInformation,           // 4  wdm
-	FileStandardInformation,        // 5  wdm
-	FileInternalInformation,        // 6
-	FileEaInformation,              // 7
-	FileAccessInformation,          // 8
-	FileNameInformation,            // 9
-	FileRenameInformation,          // 10
-	FileLinkInformation,            // 11
-	FileNamesInformation,           // 12
-	FileDispositionInformation,     // 13
-	FilePositionInformation,        // 14 wdm
-	FileFullEaInformation,          // 15
-	FileModeInformation,            // 16
-	FileAlignmentInformation,       // 17
-	FileAllInformation,             // 18
-	FileAllocationInformation,      // 19
-	FileEndOfFileInformation,       // 20 wdm
-	FileAlternateNameInformation,   // 21
-	FileStreamInformation,          // 22
-	FilePipeInformation,            // 23
-	FilePipeLocalInformation,       // 24
-	FilePipeRemoteInformation,      // 25
-	FileMailslotQueryInformation,   // 26
-	FileMailslotSetInformation,     // 27
-	FileCompressionInformation,     // 28
-	FileObjectIdInformation,        // 29
-	FileCompletionInformation,      // 30
-	FileMoveClusterInformation,     // 31
-	FileQuotaInformation,           // 32
-	FileReparsePointInformation,    // 33
-	FileNetworkOpenInformation,     // 34
-	FileAttributeTagInformation,    // 35
-	FileTrackingInformation,        // 36
-	FileIdBothDirectoryInformation, // 37
-	FileIdFullDirectoryInformation, // 38
-	FileMaximumInformation
+    FileDirectoryInformation       = 1,
+    FileFullDirectoryInformation,   // 2
+    FileBothDirectoryInformation,   // 3
+    FileBasicInformation,           // 4  wdm
+    FileStandardInformation,        // 5  wdm
+    FileInternalInformation,        // 6
+    FileEaInformation,              // 7
+    FileAccessInformation,          // 8
+    FileNameInformation,            // 9
+    FileRenameInformation,          // 10
+    FileLinkInformation,            // 11
+    FileNamesInformation,           // 12
+    FileDispositionInformation,     // 13
+    FilePositionInformation,        // 14 wdm
+    FileFullEaInformation,          // 15
+    FileModeInformation,            // 16
+    FileAlignmentInformation,       // 17
+    FileAllInformation,             // 18
+    FileAllocationInformation,      // 19
+    FileEndOfFileInformation,       // 20 wdm
+    FileAlternateNameInformation,   // 21
+    FileStreamInformation,          // 22
+    FilePipeInformation,            // 23
+    FilePipeLocalInformation,       // 24
+    FilePipeRemoteInformation,      // 25
+    FileMailslotQueryInformation,   // 26
+    FileMailslotSetInformation,     // 27
+    FileCompressionInformation,     // 28
+    FileObjectIdInformation,        // 29
+    FileCompletionInformation,      // 30
+    FileMoveClusterInformation,     // 31
+    FileQuotaInformation,           // 32
+    FileReparsePointInformation,    // 33
+    FileNetworkOpenInformation,     // 34
+    FileAttributeTagInformation,    // 35
+    FileTrackingInformation,        // 36
+    FileIdBothDirectoryInformation, // 37
+    FileIdFullDirectoryInformation, // 38
+    FileMaximumInformation
 } FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
 
 // Valid values for the Attributes field
@@ -230,31 +237,31 @@ typedef enum _FILE_INFORMATION_CLASS {
 
 // Object attributes structure
 typedef struct _OBJECT_ATTRIBUTES {
-	ULONG Length;
-	HANDLE RootDirectory;
-	PUNICODE_STRING ObjectName;
-	ULONG Attributes;
-	PVOID SecurityDescriptor;
-	PVOID SecurityQualityOfService;
+    ULONG Length;
+    HANDLE RootDirectory;
+    PUNICODE_STRING ObjectName;
+    ULONG Attributes;
+    PVOID SecurityDescriptor;
+    PVOID SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
 
 typedef struct _FILE_LINK_RENAME_INFORMATION { // Info Classes 10 and 11
-	BOOLEAN ReplaceIfExists;
-	HANDLE RootDirectory;
-	ULONG FileNameLength;
-	WCHAR FileName[1];
+    BOOLEAN ReplaceIfExists;
+    HANDLE RootDirectory;
+    ULONG FileNameLength;
+    WCHAR FileName[1];
 } FILE_LINK_INFORMATION, *PFILE_LINK_INFORMATION, FILE_RENAME_INFORMATION, *PFILE_RENAME_INFORMATION;
 
 typedef enum
 {
-	INVALID_PATH = 0,
-	UNC_PATH,
-	ABSOLUTE_DRIVE_PATH,
-	RELATIVE_DRIVE_PATH,
-	ABSOLUTE_PATH,
-	RELATIVE_PATH,
-	DEVICE_PATH,
-	UNC_DOT_PATH
+    INVALID_PATH = 0,
+    UNC_PATH,
+    ABSOLUTE_DRIVE_PATH,
+    RELATIVE_DRIVE_PATH,
+    ABSOLUTE_PATH,
+    RELATIVE_PATH,
+    DEVICE_PATH,
+    UNC_DOT_PATH
 } DOS_PATHNAME_TYPE;
 
 #define SYMBOLIC_LINK_QUERY (0x0001)
@@ -262,24 +269,24 @@ typedef enum
 #define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | 0x1)
 
 #define FILE_SYNCHRONOUS_IO_NONALERT 0x00000020
-	// All operations on the file are
-	// performed synchronously. Waits
-	// in the system to synchronize I/O
-	// queuing and completion are not
-	// subject to alerts. This flag
-	// also causes the I/O system to
-	// maintain the file position context.
-	// If this flag is set, the
-	// DesiredAccess SYNCHRONIZE flag also
-	// must be set.
+    // All operations on the file are
+    // performed synchronously. Waits
+    // in the system to synchronize I/O
+    // queuing and completion are not
+    // subject to alerts. This flag
+    // also causes the I/O system to
+    // maintain the file position context.
+    // If this flag is set, the
+    // DesiredAccess SYNCHRONIZE flag also
+    // must be set.
 #define FILE_OPEN_FOR_BACKUP_INTENT 0x00004000
-	// The file is being opened for backup
-	// intent, hence, the system should
-	// check for certain access rights
-	// and grant the caller the appropriate
-	// accesses to the file before checking
-	// the input DesiredAccess against the
-	// file's security descriptor.
+    // The file is being opened for backup
+    // intent, hence, the system should
+    // check for certain access rights
+    // and grant the caller the appropriate
+    // accesses to the file before checking
+    // the input DesiredAccess against the
+    // file's security descriptor.
 
 /******************************************************************************
  *
@@ -294,238 +301,238 @@ NTDLLEXTERN
 BOOLEAN
 WINAPI
 RtlCreateUnicodeStringFromAsciiz (
-	OUT PUNICODE_STRING Destination,
-	IN PCSTR Source
-	);
+    OUT PUNICODE_STRING Destination,
+    IN PCSTR Source
+    );
 
 NTDLLEXTERN
 NTSTATUS
 WINAPI
 ZwClose (
-	IN HANDLE Handle
-	);
+    IN HANDLE Handle
+    );
 
 NTDLLEXTERN
 NTSTATUS
 WINAPI
 ZwSetInformationFile (
-	IN HANDLE Filehandle,
-	OUT PIO_STATUS_BLOCK IoStatusBlock,
-	IN PVOID FileInformation,
-	IN ULONG FileInformationLength,
-	IN FILE_INFORMATION_CLASS FileInformationClass
-	);
+    IN HANDLE Filehandle,
+    OUT PIO_STATUS_BLOCK IoStatusBlock,
+    IN PVOID FileInformation,
+    IN ULONG FileInformationLength,
+    IN FILE_INFORMATION_CLASS FileInformationClass
+    );
 
 NTDLLEXTERN
 BOOLEAN
 WINAPI
 RtlPrefixUnicodeString (
-	PUNICODE_STRING Prefix,
-	PUNICODE_STRING ContainingString,
-	BOOLEAN CaseInsensitive
-	);
+    PUNICODE_STRING Prefix,
+    PUNICODE_STRING ContainingString,
+    BOOLEAN CaseInsensitive
+    );
 
 NTDLLEXTERN
 NTSTATUS
 WINAPI
 ZwOpenSymbolicLinkObject (
-	OUT PHANDLE SymbolicLinkHandle,
-	IN ACCESS_MASK DesiredAccess,
-	IN POBJECT_ATTRIBUTES ObjectAttributes
-	);
+    OUT PHANDLE SymbolicLinkHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes
+    );
 
 NTDLLEXTERN
 NTSTATUS
 WINAPI
 ZwQuerySymbolicLinkObject (
-	IN HANDLE SymbolicLinkHandle,
-	IN OUT PUNICODE_STRING TargetName,
-	OUT PULONG ReturnLength OPTIONAL
-	);
+    IN HANDLE SymbolicLinkHandle,
+    IN OUT PUNICODE_STRING TargetName,
+    OUT PULONG ReturnLength OPTIONAL
+    );
 
 NTDLLEXTERN
 NTSTATUS
 WINAPI
 ZwOpenFile (
-	OUT PHANDLE FileHandle,
-	IN ACCESS_MASK DesiredAccess,
-	IN POBJECT_ATTRIBUTES ObjectAttributes,
-	OUT PIO_STATUS_BLOCK IoStatusBlock,
-	IN ULONG ShareAccess,
-	IN ULONG OpenOptions
-	);
+    OUT PHANDLE FileHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    OUT PIO_STATUS_BLOCK IoStatusBlock,
+    IN ULONG ShareAccess,
+    IN ULONG OpenOptions
+    );
 
 NTDLLEXTERN
 PVOID
 WINAPI
 RtlAllocateHeap (
-	HANDLE	Heap,
-	ULONG	Flags,
-	ULONG	Size
-	);
+    HANDLE  Heap,
+    ULONG   Flags,
+    ULONG   Size
+    );
 
 NTDLLEXTERN
 BOOLEAN
 WINAPI
 RtlFreeHeap (
-	HANDLE	Heap,
-	ULONG	Flags,
-	PVOID	Address
-	);
+    HANDLE  Heap,
+    ULONG   Flags,
+    PVOID   Address
+    );
 
 NTDLLEXTERN
 BOOLEAN
 WINAPI
 RtlDosPathNameToNtPathName_U (
-	PCWSTR DosName,
-	PUNICODE_STRING NtName,
-	PWSTR *DosFilePath,
-	PVOID NtFilePath // Some special structure, first member being UNICODE_STRING
-	);
+    PCWSTR DosName,
+    PUNICODE_STRING NtName,
+    PWSTR *DosFilePath,
+    PVOID NtFilePath // Some special structure, first member being UNICODE_STRING
+    );
 
 NTDLLEXTERN
 VOID
 WINAPI
 RtlInitUnicodeString (
-	PUNICODE_STRING	DestinationString,
-	PCWSTR SourceString
-	);
+    PUNICODE_STRING DestinationString,
+    PCWSTR SourceString
+    );
 
 NTDLLEXTERN
 ULONG
 WINAPI
 RtlDetermineDosPathNameType_U (
-	PCWSTR Path
-	);
+    PCWSTR Path
+    );
 
 NTDLLEXTERN
 DWORD
 WINAPI
 RtlNtStatusToDosError (
-	NTSTATUS StatusCode
-	);
+    NTSTATUS StatusCode
+    );
 
 NTDLLEXTERN
 BOOLEAN
 WINAPI
 RtlCreateUnicodeString (
-	OUT PUNICODE_STRING Destination,
-	IN PWSTR Source
-	);
+    OUT PUNICODE_STRING Destination,
+    IN PWSTR Source
+    );
 
 NTDLLEXTERN
 VOID
 WINAPI
 RtlFreeUnicodeString (
-	IN PUNICODE_STRING UnicodeString
-	);
+    IN PUNICODE_STRING UnicodeString
+    );
 
 #else
 
 typedef BOOLEAN (WINAPI *TFNRtlCreateUnicodeStringFromAsciiz) (
-	OUT PUNICODE_STRING Destination,
-	IN PCSTR Source
-	);
+    OUT PUNICODE_STRING Destination,
+    IN PCSTR Source
+    );
 
 typedef NTSTATUS (WINAPI *TFNZwClose) (
-	IN HANDLE Handle
-	);
+    IN HANDLE Handle
+    );
 
 typedef NTSTATUS (WINAPI *TFNZwSetInformationFile) (
-	IN HANDLE Filehandle,
-	OUT PIO_STATUS_BLOCK IoStatusBlock,
-	IN PVOID FileInformation,
-	IN ULONG FileInformationLength,
-	IN FILE_INFORMATION_CLASS FileInformationClass
-	);
+    IN HANDLE Filehandle,
+    OUT PIO_STATUS_BLOCK IoStatusBlock,
+    IN PVOID FileInformation,
+    IN ULONG FileInformationLength,
+    IN FILE_INFORMATION_CLASS FileInformationClass
+    );
 
 typedef BOOLEAN (WINAPI *TFNRtlPrefixUnicodeString) (
-	PUNICODE_STRING Prefix,
-	PUNICODE_STRING ContainingString,
-	BOOLEAN CaseInsensitive
-	);
+    PUNICODE_STRING Prefix,
+    PUNICODE_STRING ContainingString,
+    BOOLEAN CaseInsensitive
+    );
 
 typedef NTSTATUS (WINAPI *TFNZwOpenSymbolicLinkObject) (
-	OUT PHANDLE SymbolicLinkHandle,
-	IN ACCESS_MASK DesiredAccess,
-	IN POBJECT_ATTRIBUTES ObjectAttributes
-	);
+    OUT PHANDLE SymbolicLinkHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes
+    );
 
 typedef NTSTATUS (WINAPI *TFNZwQuerySymbolicLinkObject) (
-	IN HANDLE SymbolicLinkHandle,
-	IN OUT PUNICODE_STRING TargetName,
-	OUT PULONG ReturnLength OPTIONAL
-	);
+    IN HANDLE SymbolicLinkHandle,
+    IN OUT PUNICODE_STRING TargetName,
+    OUT PULONG ReturnLength OPTIONAL
+    );
 
 typedef NTSTATUS (WINAPI *TFNZwOpenFile) (
-	OUT PHANDLE FileHandle,
-	IN ACCESS_MASK DesiredAccess,
-	IN POBJECT_ATTRIBUTES ObjectAttributes,
-	OUT PIO_STATUS_BLOCK IoStatusBlock,
-	IN ULONG ShareAccess,
-	IN ULONG OpenOptions
-	);
+    OUT PHANDLE FileHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    OUT PIO_STATUS_BLOCK IoStatusBlock,
+    IN ULONG ShareAccess,
+    IN ULONG OpenOptions
+    );
 
 typedef PVOID (WINAPI *TFNRtlAllocateHeap) (
-	HANDLE	Heap,
-	ULONG	Flags,
-	ULONG	Size
-	);
+    HANDLE  Heap,
+    ULONG   Flags,
+    ULONG   Size
+    );
 
 typedef BOOLEAN (WINAPI *TFNRtlFreeHeap) (
-	HANDLE	Heap,
-	ULONG	Flags,
-	PVOID	Address
-	);
+    HANDLE  Heap,
+    ULONG   Flags,
+    PVOID   Address
+    );
 
 typedef BOOLEAN (WINAPI *TFNRtlDosPathNameToNtPathName_U) (
-	PCWSTR DosName,
-	PUNICODE_STRING NtName,
-	PWSTR *DosFilePath,
-	PVOID NtFilePath // Some special structure, first member being UNICODE_STRING
-	);
+    PCWSTR DosName,
+    PUNICODE_STRING NtName,
+    PWSTR *DosFilePath,
+    PVOID NtFilePath // Some special structure, first member being UNICODE_STRING
+    );
 
 typedef VOID (WINAPI *TFNRtlInitUnicodeString) (
-	PUNICODE_STRING	DestinationString,
-	PCWSTR SourceString
-	);
+    PUNICODE_STRING DestinationString,
+    PCWSTR SourceString
+    );
 
 typedef ULONG (WINAPI *TFNRtlDetermineDosPathNameType_U) (
-	PCWSTR Path
-	);
+    PCWSTR Path
+    );
 
 typedef DWORD (WINAPI *TFNRtlNtStatusToDosError) (
-	NTSTATUS StatusCode
-	);
+    NTSTATUS StatusCode
+    );
 
 typedef BOOLEAN (WINAPI *TFNRtlCreateUnicodeString) (
-	OUT PUNICODE_STRING Destination,
-	IN PWSTR Source
-	);
+    OUT PUNICODE_STRING Destination,
+    IN PWSTR Source
+    );
 
 typedef VOID (WINAPI *TFNRtlFreeUnicodeString) (
-	IN PUNICODE_STRING UnicodeString
-	);
+    IN PUNICODE_STRING UnicodeString
+    );
 
 ///////////////////////////////////
-	static TFNRtlCreateUnicodeStringFromAsciiz RtlCreateUnicodeStringFromAsciiz = NULL;
-	static TFNZwClose                          ZwClose                          = NULL;
-	static TFNZwSetInformationFile             ZwSetInformationFile             = NULL;
-	static TFNRtlPrefixUnicodeString           RtlPrefixUnicodeString           = NULL;
-	static TFNZwOpenSymbolicLinkObject         ZwOpenSymbolicLinkObject         = NULL;
-	static TFNZwQuerySymbolicLinkObject        ZwQuerySymbolicLinkObject        = NULL;
-	static TFNZwOpenFile                       ZwOpenFile                       = NULL;
-	static TFNRtlAllocateHeap                  RtlAllocateHeap                  = NULL;
-	static TFNRtlFreeHeap                      RtlFreeHeap                      = NULL;
-	static TFNRtlDosPathNameToNtPathName_U     RtlDosPathNameToNtPathName_U     = NULL;
-	static TFNRtlInitUnicodeString             RtlInitUnicodeString             = NULL;
-	static TFNRtlDetermineDosPathNameType_U    RtlDetermineDosPathNameType_U    = NULL;
-	static TFNRtlNtStatusToDosError            RtlNtStatusToDosError            = NULL;
-	static TFNRtlCreateUnicodeString           RtlCreateUnicodeString           = NULL;
-	static TFNRtlFreeUnicodeString             RtlFreeUnicodeString             = NULL;
-	
-	// Whether they have been loaded or not
-	static BOOL bRtdlFunctionsLoaded = FALSE;
+    static TFNRtlCreateUnicodeStringFromAsciiz RtlCreateUnicodeStringFromAsciiz = NULL;
+    static TFNZwClose                          ZwClose                          = NULL;
+    static TFNZwSetInformationFile             ZwSetInformationFile             = NULL;
+    static TFNRtlPrefixUnicodeString           RtlPrefixUnicodeString           = NULL;
+    static TFNZwOpenSymbolicLinkObject         ZwOpenSymbolicLinkObject         = NULL;
+    static TFNZwQuerySymbolicLinkObject        ZwQuerySymbolicLinkObject        = NULL;
+    static TFNZwOpenFile                       ZwOpenFile                       = NULL;
+    static TFNRtlAllocateHeap                  RtlAllocateHeap                  = NULL;
+    static TFNRtlFreeHeap                      RtlFreeHeap                      = NULL;
+    static TFNRtlDosPathNameToNtPathName_U     RtlDosPathNameToNtPathName_U     = NULL;
+    static TFNRtlInitUnicodeString             RtlInitUnicodeString             = NULL;
+    static TFNRtlDetermineDosPathNameType_U    RtlDetermineDosPathNameType_U    = NULL;
+    static TFNRtlNtStatusToDosError            RtlNtStatusToDosError            = NULL;
+    static TFNRtlCreateUnicodeString           RtlCreateUnicodeString           = NULL;
+    static TFNRtlFreeUnicodeString             RtlFreeUnicodeString             = NULL;
+
+    // Whether they have been loaded or not
+    static BOOL bRtdlFunctionsLoaded = FALSE;
 
 #endif // RTDL
 
@@ -553,27 +560,27 @@ typedef VOID (WINAPI *TFNRtlFreeUnicodeString) (
 __declspec(naked) BOOL
 WINAPI
 CreateHardLinkA (
-	IN LPCSTR lpFileName,
-	IN LPCSTR lpExistingFileName,
-	IN LPSECURITY_ATTRIBUTES lpSecurityAttributes
-	)
+    IN LPCSTR lpFileName,
+    IN LPCSTR lpExistingFileName,
+    IN LPSECURITY_ATTRIBUTES lpSecurityAttributes
+    )
 {
-	__asm {
-		jmp lpfnCreateHardLinkA
-	}
+    __asm {
+        jmp lpfnCreateHardLinkA
+    }
 }
 
 __declspec(naked) BOOL
 WINAPI
 CreateHardLinkW (
-	IN LPCWSTR lpFileName,
-	IN LPCWSTR lpExistingFileName,
-	IN LPSECURITY_ATTRIBUTES lpSecurityAttributes
-	)
+    IN LPCWSTR lpFileName,
+    IN LPCWSTR lpExistingFileName,
+    IN LPSECURITY_ATTRIBUTES lpSecurityAttributes
+    )
 {
-	__asm {
-		jmp lpfnCreateHardLinkW
-	}
+    __asm {
+        jmp lpfnCreateHardLinkW
+    }
 }
 
 #endif PREFERAPI
@@ -659,247 +666,247 @@ CreateHardLinkW
 #else
 MyCreateHardLinkW
 #endif
-	(
-	LPCWSTR szLinkName,
-	LPCWSTR szLinkTarget,
-	LPSECURITY_ATTRIBUTES lpSecurityAttributes
-	)
+    (
+    LPCWSTR szLinkName,
+    LPCWSTR szLinkTarget,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes
+    )
 {
-	// Declare required variables
-	DeclareUnicodeString(usNtName_LinkTarget);
-	DeclareUnicodeString(usNtName_LinkName);
-	DeclareUnicodeString(usSymLinkDrive);
-	DeclareUnicodeStringC(usCheckDrive, L"\\??\\C:\0");
-	DeclareUnicodeStringC(usLanMan, L"\\Device\\LanmanRedirector\\\0");
-	HANDLE hHeap = NtpGetProcessHeap();
-	DWORD dwFullPath;
-	NTSTATUS Status;
-	PWSTR lpwszFullPath = NULL, lpwszFullPathFilePart = NULL;
-	HANDLE hLinkTarget = NULL, hDrive = NULL;
-	OBJECT_ATTRIBUTES oaMisc;
-	IO_STATUS_BLOCK iostats;
-	BOOL result = FALSE;
+    // Declare required variables
+    DeclareUnicodeString(usNtName_LinkTarget);
+    DeclareUnicodeString(usNtName_LinkName);
+    DeclareUnicodeString(usSymLinkDrive);
+    DeclareUnicodeStringC(usCheckDrive, L"\\??\\C:\0");
+    DeclareUnicodeStringC(usLanMan, L"\\Device\\LanmanRedirector\\\0");
+    HANDLE hHeap = NtpGetProcessHeap();
+    DWORD dwFullPath;
+    NTSTATUS Status;
+    PWSTR lpwszFullPath = NULL, lpwszFullPathFilePart = NULL;
+    HANDLE hLinkTarget = NULL, hDrive = NULL;
+    OBJECT_ATTRIBUTES oaMisc;
+    IO_STATUS_BLOCK iostats;
+    BOOL result = FALSE;
 
 #ifdef RTDL
-	/****************************************************************
-	  Check for dynamically loaded functions
-	 ****************************************************************/
-	if(!bRtdlFunctionsLoaded)
-	{
-		dbg_printf("ERROR: ERROR_CALL_NOT_IMPLEMENTED\n");
-		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-		return FALSE;
-	}
+    /****************************************************************
+      Check for dynamically loaded functions
+     ****************************************************************/
+    if(!bRtdlFunctionsLoaded)
+    {
+        dbg_printf("ERROR: ERROR_CALL_NOT_IMPLEMENTED\n");
+        SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+        return FALSE;
+    }
 #endif // RTDL
-	
-	/****************************************************************
-	  Preliminary parameter checks which return with error code set
-	 ****************************************************************/
-	if((!szLinkName) || (!szLinkTarget))
-	{
-		// If neither is Assigned -> return with appropriate error code
-		dbg_printf("ERROR: ERROR_INVALID_PARAMETER\n");
-		SetLastError(ERROR_INVALID_PARAMETER);
-		return FALSE;
-	}
-	
-	dbg_printf("szLinkName   == %ws\n", szLinkName);
-	dbg_printf("szLinkTarget == %ws\n", szLinkTarget);
-	
-	// Determine DOS path type for both link name and target
-	if((RtlDetermineDosPathNameType_U(szLinkName) == UNC_PATH) ||
-		(RtlDetermineDosPathNameType_U(szLinkTarget) == UNC_PATH))
-	{
-		// If UNC (i.e. network) path -> return with appropriate error code
-		dbg_printf("ERROR: ERROR_INVALID_NAME\n");
-		SetLastError(ERROR_INVALID_NAME);
-		return FALSE;
-	}
-	
-	/****************************************************************
-	  Convert the link target into a UNICODE_STRING while checking
-	  path. This is the main part ...
-	 ****************************************************************/
-	if(RtlDosPathNameToNtPathName_U(szLinkTarget, &usNtName_LinkTarget, NULL, NULL))
-	__try {
-		dbg_printf("usNtName_LinkTarget = {%d, %d, %p}\n", usNtName_LinkTarget.Length, usNtName_LinkTarget.MaximumLength, usNtName_LinkTarget.Buffer);
-		dbg_printf("hHeap == %.8X\n", hHeap);
 
-		// Determine size needed to convert path to full path
-		if(dwFullPath = GetFullPathNameW(szLinkTarget, 0, NULL, NULL))
-		{
-			dbg_printf("dwFullPath == %d\n", dwFullPath);
-			// Calculate needed size (in TCHARs)
-			dwFullPath += 2;
-			dbg_printf("dwFullPath == %d\n", dwFullPath);
-			// Allocate enough memory
-			if(lpwszFullPath = (PWSTR)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, dwFullPath * sizeof(WCHAR)))
-			__try {
-				// Convert the path
-				if(GetFullPathNameW(szLinkTarget, dwFullPath, lpwszFullPath, &lpwszFullPathFilePart))
-				{
-					/****************************************************************
-					  Preparation of the checking for mapped network drives
-					 ****************************************************************/
-					dbg_printf("usCheckDrive = {%d, %d, %p}\n", usCheckDrive.Length, usCheckDrive.MaximumLength, usCheckDrive.Buffer);
-					dbg_printf("Before usCheckDrive == %ws\n", usCheckDrive.Buffer);
-					// Replace drive letter by the drive letter we want
-					usCheckDrive.Buffer[4] = lpwszFullPath[0];
-					dbg_printf("After  usCheckDrive == %ws\n", usCheckDrive.Buffer);
-					// Init OBJECT_ATTRIBUTES
-					InitializeObjectAttributes(&oaMisc, &usCheckDrive, OBJ_CASE_INSENSITIVE, NULL, NULL);
-					/****************************************************************
-					  Checking for (illegal!) mapped network drives
-					  Open symbolic link object for the drive and check whether the
-					  symbolic link is prefixed with "\Device\LanmanRedirector\".
-					 ****************************************************************/
-					if(NT_SUCCESS(Status = ZwOpenSymbolicLinkObject(&hDrive, SYMBOLIC_LINK_QUERY, &oaMisc)))
-					__try {
-						dbg_printf("ZwOpenSymbolicLinkObject() == %.8X\n", Status);
-						usSymLinkDrive.MaximumLength = MAX_PATH * sizeof(WCHAR);
-						// Allocate memory to hold the name of the symlink target
-						if(usSymLinkDrive.Buffer = (PWSTR)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, usSymLinkDrive.MaximumLength))
-						__try {
-							dbg_printf("Going to query %ws\n", usCheckDrive.Buffer);
-							dbg_printf("usSymLinkDrive = {%d, %d, %p}\n", usSymLinkDrive.Length, usSymLinkDrive.MaximumLength, usSymLinkDrive.Buffer);
-							// Query the path the symbolic link points to ...
-							if(NT_SUCCESS(Status = ZwQuerySymbolicLinkObject(hDrive, &usSymLinkDrive, NULL)))
-							{
-								dbg_printf("ZwQuerySymbolicLinkObject() == %.8X\n", Status);
-								dbg_printf("lpwszFullPath == %ws\n", lpwszFullPath);
-								// Initialise the length members
-								dbg_printf("usLanMan = {%d, %d, %p}\n", usLanMan.Length, usLanMan.MaximumLength, usLanMan.Buffer);
-								dbg_printf("usLanMan == %ws\n", usLanMan.Buffer);
-								
-								dbg_printf("usSymLinkDrive = {%d, %d, %p}\n", usSymLinkDrive.Length, usSymLinkDrive.MaximumLength, usSymLinkDrive.Buffer);
-								dbg_printf("usSymLinkDrive == %ws\n", usSymLinkDrive.Buffer);
-								// The path must not be a mapped drive ... check this!
-								// NB: This is done by comparison of prefixes
-								if(!RtlPrefixUnicodeString(&usLanMan, &usSymLinkDrive, TRUE))
-								{
-									dbg_printf("Going to open that file ...\n");
-									// Initialise OBJECT_ATTRIBUTES
-									InitializeObjectAttributes(&oaMisc, &usNtName_LinkTarget, OBJ_CASE_INSENSITIVE, NULL, (lpSecurityAttributes) ? lpSecurityAttributes->lpSecurityDescriptor : NULL);
-									/****************************************************************
-									  Open existing target file and prepare for processing
-									 ****************************************************************/
-									if(NT_SUCCESS(ZwOpenFile(&hLinkTarget,
-										DELETE | SYNCHRONIZE,
-										&oaMisc,
-										&iostats,
-										FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-										FILE_FLAG_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_FOR_BACKUP_INTENT
-										)))
-									__try {
-										dbg_printf("%.8X - %.8X - %.8X\n", DELETE | SYNCHRONIZE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_FLAG_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_FOR_BACKUP_INTENT);
-										dbg_printf("OPENED SUCCESSFULLY\n");
-										// Wow ... target opened ... let's try to convert the
-										// name of the hardlink to be created into NT style
-										if(RtlDosPathNameToNtPathName_U(szLinkName, &usNtName_LinkName, NULL, NULL))
-										__try {
-											// Now almost everything is done to create a link!
-											dbg_printf("sizeof(FILE_LINK_INFORMATION) == %d\n", sizeof(FILE_LINK_INFORMATION));
-											DWORD dwSize = sizeof(FILE_LINK_INFORMATION) + usNtName_LinkName.Length + sizeof(WCHAR);
-											dbg_printf("usNtName_LinkName   == %ws (%d)\n", usNtName_LinkName.Buffer, usNtName_LinkName.Length);
-											dbg_printf("usNtName_LinkTarget == %ws (%d)\n", usNtName_LinkTarget.Buffer, usNtName_LinkTarget.Length);
-											// Allocate buffer for FILE_LINK_INFORMATION+Filename
-											if(
-											PFILE_LINK_INFORMATION lpFileLinkInfo =
-												(PFILE_LINK_INFORMATION)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, dwSize)
-												)
-											__try {
-												/****************************************************************
-												  Core to create actual hardlink
-												 ****************************************************************/
-												dbg_printf("%p\n", lpFileLinkInfo);
-												// Fill the FILE_LINK_INFORMATION structure
-												lpFileLinkInfo->ReplaceIfExists = FALSE;
-												lpFileLinkInfo->RootDirectory = NULL;
-												lpFileLinkInfo->FileNameLength = usNtName_LinkName.Length;
-												memcpy(lpFileLinkInfo->FileName, usNtName_LinkName.Buffer, lpFileLinkInfo->FileNameLength);
-												dbg_printf("%ws -> %d\n", lpFileLinkInfo->FileName, wcslen(usNtName_LinkName.Buffer));
-												dbg_printf("%X\n", dwSize);
-												memset(&iostats, 0, sizeof(iostats));
-												// Set this information class
-												result = NT_SUCCESS(Status = ZwSetInformationFile(hLinkTarget, &iostats, lpFileLinkInfo, dwSize, FileLinkInformation));
-												dbg_printf("ZwSetInformationFile() == %.8X\n", Status);
-											}
-											__finally {
-												// Free the buffer
-												RtlFreeHeap(hHeap, 0, lpFileLinkInfo);
-												// Set last error code
-												SetLastError(RtlNtStatusToDosError(Status));
-											}
-										}
-										__finally {
-											RtlFreeHeap(hHeap, 0, usNtName_LinkName.Buffer);
-										}
-										else
-										{
-											SetLastError(ERROR_INVALID_NAME);
-											return FALSE;
-										}
-									}
-									__finally {
-										ZwClose(hLinkTarget);
-									}
-								}
-								else
-								{
-									dbg_printf("ERROR: ERROR_INVALID_NAME\n");
-									SetLastError(ERROR_INVALID_NAME);
-									return FALSE;
-								}
-							}
-							else
-							{
-								dbg_printf("COULD NOT QUERY SYMBOLIC LINK!!! %.8X\n", Status);
-								SetLastError(RtlNtStatusToDosError(Status));
-								return FALSE;
-							}
-						}
-						__finally {
-							RtlFreeHeap(hHeap, 0, usSymLinkDrive.Buffer);
-						}
-						else
-						{
-							dbg_printf("ERROR: ERROR_NOT_ENOUGH_MEMORY\n");
-							SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-							return FALSE;
-						}
-					}
-					__finally {
-						ZwClose(hDrive);
-					}
-					else
-					{
-						dbg_printf("COULD NOT OPEN SYMBOLIC LINK!!! %.8X\n", Status);
-						SetLastError(RtlNtStatusToDosError(Status));
-						return FALSE;
-					}
-				}
-			}
-			__finally {
-				RtlFreeHeap(hHeap, 0, lpwszFullPath);
-			}
-			else
-			{
-				SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-				return FALSE;
-			}
-		}			
-	}
-	__finally {
-		RtlFreeHeap(hHeap, 0, usNtName_LinkTarget.Buffer);
-	}
-	else
-	{
-		// If path is invalid or does not exist -> return with appropriate error code
-		SetLastError(ERROR_PATH_NOT_FOUND);
-		return FALSE;
-	}
+    /****************************************************************
+      Preliminary parameter checks which return with error code set
+     ****************************************************************/
+    if((!szLinkName) || (!szLinkTarget))
+    {
+        // If neither is Assigned -> return with appropriate error code
+        dbg_printf("ERROR: ERROR_INVALID_PARAMETER\n");
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
 
-	return result;
+    dbg_printf("szLinkName   == %ws\n", szLinkName);
+    dbg_printf("szLinkTarget == %ws\n", szLinkTarget);
+
+    // Determine DOS path type for both link name and target
+    if((RtlDetermineDosPathNameType_U(szLinkName) == UNC_PATH) ||
+        (RtlDetermineDosPathNameType_U(szLinkTarget) == UNC_PATH))
+    {
+        // If UNC (i.e. network) path -> return with appropriate error code
+        dbg_printf("ERROR: ERROR_INVALID_NAME\n");
+        SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
+    }
+
+    /****************************************************************
+      Convert the link target into a UNICODE_STRING while checking
+      path. This is the main part ...
+     ****************************************************************/
+    if(RtlDosPathNameToNtPathName_U(szLinkTarget, &usNtName_LinkTarget, NULL, NULL))
+    __try {
+        dbg_printf("usNtName_LinkTarget = {%d, %d, %p}\n", usNtName_LinkTarget.Length, usNtName_LinkTarget.MaximumLength, usNtName_LinkTarget.Buffer);
+        dbg_printf("hHeap == %.8X\n", hHeap);
+
+        // Determine size needed to convert path to full path
+        if(dwFullPath = GetFullPathNameW(szLinkTarget, 0, NULL, NULL))
+        {
+            dbg_printf("dwFullPath == %d\n", dwFullPath);
+            // Calculate needed size (in TCHARs)
+            dwFullPath += 2;
+            dbg_printf("dwFullPath == %d\n", dwFullPath);
+            // Allocate enough memory
+            if(lpwszFullPath = (PWSTR)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, dwFullPath * sizeof(WCHAR)))
+            __try {
+                // Convert the path
+                if(GetFullPathNameW(szLinkTarget, dwFullPath, lpwszFullPath, &lpwszFullPathFilePart))
+                {
+                    /****************************************************************
+                      Preparation of the checking for mapped network drives
+                     ****************************************************************/
+                    dbg_printf("usCheckDrive = {%d, %d, %p}\n", usCheckDrive.Length, usCheckDrive.MaximumLength, usCheckDrive.Buffer);
+                    dbg_printf("Before usCheckDrive == %ws\n", usCheckDrive.Buffer);
+                    // Replace drive letter by the drive letter we want
+                    usCheckDrive.Buffer[4] = lpwszFullPath[0];
+                    dbg_printf("After  usCheckDrive == %ws\n", usCheckDrive.Buffer);
+                    // Init OBJECT_ATTRIBUTES
+                    InitializeObjectAttributes(&oaMisc, &usCheckDrive, OBJ_CASE_INSENSITIVE, NULL, NULL);
+                    /****************************************************************
+                      Checking for (illegal!) mapped network drives
+                      Open symbolic link object for the drive and check whether the
+                      symbolic link is prefixed with "\Device\LanmanRedirector\".
+                     ****************************************************************/
+                    if(NT_SUCCESS(Status = ZwOpenSymbolicLinkObject(&hDrive, SYMBOLIC_LINK_QUERY, &oaMisc)))
+                    __try {
+                        dbg_printf("ZwOpenSymbolicLinkObject() == %.8X\n", Status);
+                        usSymLinkDrive.MaximumLength = MAX_PATH * sizeof(WCHAR);
+                        // Allocate memory to hold the name of the symlink target
+                        if(usSymLinkDrive.Buffer = (PWSTR)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, usSymLinkDrive.MaximumLength))
+                        __try {
+                            dbg_printf("Going to query %ws\n", usCheckDrive.Buffer);
+                            dbg_printf("usSymLinkDrive = {%d, %d, %p}\n", usSymLinkDrive.Length, usSymLinkDrive.MaximumLength, usSymLinkDrive.Buffer);
+                            // Query the path the symbolic link points to ...
+                            if(NT_SUCCESS(Status = ZwQuerySymbolicLinkObject(hDrive, &usSymLinkDrive, NULL)))
+                            {
+                                dbg_printf("ZwQuerySymbolicLinkObject() == %.8X\n", Status);
+                                dbg_printf("lpwszFullPath == %ws\n", lpwszFullPath);
+                                // Initialise the length members
+                                dbg_printf("usLanMan = {%d, %d, %p}\n", usLanMan.Length, usLanMan.MaximumLength, usLanMan.Buffer);
+                                dbg_printf("usLanMan == %ws\n", usLanMan.Buffer);
+
+                                dbg_printf("usSymLinkDrive = {%d, %d, %p}\n", usSymLinkDrive.Length, usSymLinkDrive.MaximumLength, usSymLinkDrive.Buffer);
+                                dbg_printf("usSymLinkDrive == %ws\n", usSymLinkDrive.Buffer);
+                                // The path must not be a mapped drive ... check this!
+                                // NB: This is done by comparison of prefixes
+                                if(!RtlPrefixUnicodeString(&usLanMan, &usSymLinkDrive, TRUE))
+                                {
+                                    dbg_printf("Going to open that file ...\n");
+                                    // Initialise OBJECT_ATTRIBUTES
+                                    InitializeObjectAttributes(&oaMisc, &usNtName_LinkTarget, OBJ_CASE_INSENSITIVE, NULL, (lpSecurityAttributes) ? lpSecurityAttributes->lpSecurityDescriptor : NULL);
+                                    /****************************************************************
+                                      Open existing target file and prepare for processing
+                                     ****************************************************************/
+                                    if(NT_SUCCESS(ZwOpenFile(&hLinkTarget,
+                                        DELETE | SYNCHRONIZE,
+                                        &oaMisc,
+                                        &iostats,
+                                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                        FILE_FLAG_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_FOR_BACKUP_INTENT
+                                        )))
+                                    __try {
+                                        dbg_printf("%.8X - %.8X - %.8X\n", DELETE | SYNCHRONIZE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_FLAG_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_FOR_BACKUP_INTENT);
+                                        dbg_printf("OPENED SUCCESSFULLY\n");
+                                        // Wow ... target opened ... let's try to convert the
+                                        // name of the hardlink to be created into NT style
+                                        if(RtlDosPathNameToNtPathName_U(szLinkName, &usNtName_LinkName, NULL, NULL))
+                                        __try {
+                                            // Now almost everything is done to create a link!
+                                            dbg_printf("sizeof(FILE_LINK_INFORMATION) == %d\n", sizeof(FILE_LINK_INFORMATION));
+                                            DWORD dwSize = sizeof(FILE_LINK_INFORMATION) + usNtName_LinkName.Length + sizeof(WCHAR);
+                                            dbg_printf("usNtName_LinkName   == %ws (%d)\n", usNtName_LinkName.Buffer, usNtName_LinkName.Length);
+                                            dbg_printf("usNtName_LinkTarget == %ws (%d)\n", usNtName_LinkTarget.Buffer, usNtName_LinkTarget.Length);
+                                            // Allocate buffer for FILE_LINK_INFORMATION+Filename
+                                            if(
+                                            PFILE_LINK_INFORMATION lpFileLinkInfo =
+                                                (PFILE_LINK_INFORMATION)RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, dwSize)
+                                                )
+                                            __try {
+                                                /****************************************************************
+                                                  Core to create actual hardlink
+                                                 ****************************************************************/
+                                                dbg_printf("%p\n", lpFileLinkInfo);
+                                                // Fill the FILE_LINK_INFORMATION structure
+                                                lpFileLinkInfo->ReplaceIfExists = FALSE;
+                                                lpFileLinkInfo->RootDirectory = NULL;
+                                                lpFileLinkInfo->FileNameLength = usNtName_LinkName.Length;
+                                                memcpy(lpFileLinkInfo->FileName, usNtName_LinkName.Buffer, lpFileLinkInfo->FileNameLength);
+                                                dbg_printf("%ws -> %d\n", lpFileLinkInfo->FileName, wcslen(usNtName_LinkName.Buffer));
+                                                dbg_printf("%X\n", dwSize);
+                                                memset(&iostats, 0, sizeof(iostats));
+                                                // Set this information class
+                                                result = NT_SUCCESS(Status = ZwSetInformationFile(hLinkTarget, &iostats, lpFileLinkInfo, dwSize, FileLinkInformation));
+                                                dbg_printf("ZwSetInformationFile() == %.8X\n", Status);
+                                            }
+                                            __finally {
+                                                // Free the buffer
+                                                RtlFreeHeap(hHeap, 0, lpFileLinkInfo);
+                                                // Set last error code
+                                                SetLastError(RtlNtStatusToDosError(Status));
+                                            }
+                                        }
+                                        __finally {
+                                            RtlFreeHeap(hHeap, 0, usNtName_LinkName.Buffer);
+                                        }
+                                        else
+                                        {
+                                            SetLastError(ERROR_INVALID_NAME);
+                                            return FALSE;
+                                        }
+                                    }
+                                    __finally {
+                                        ZwClose(hLinkTarget);
+                                    }
+                                }
+                                else
+                                {
+                                    dbg_printf("ERROR: ERROR_INVALID_NAME\n");
+                                    SetLastError(ERROR_INVALID_NAME);
+                                    return FALSE;
+                                }
+                            }
+                            else
+                            {
+                                dbg_printf("COULD NOT QUERY SYMBOLIC LINK!!! %.8X\n", Status);
+                                SetLastError(RtlNtStatusToDosError(Status));
+                                return FALSE;
+                            }
+                        }
+                        __finally {
+                            RtlFreeHeap(hHeap, 0, usSymLinkDrive.Buffer);
+                        }
+                        else
+                        {
+                            dbg_printf("ERROR: ERROR_NOT_ENOUGH_MEMORY\n");
+                            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                            return FALSE;
+                        }
+                    }
+                    __finally {
+                        ZwClose(hDrive);
+                    }
+                    else
+                    {
+                        dbg_printf("COULD NOT OPEN SYMBOLIC LINK!!! %.8X\n", Status);
+                        SetLastError(RtlNtStatusToDosError(Status));
+                        return FALSE;
+                    }
+                }
+            }
+            __finally {
+                RtlFreeHeap(hHeap, 0, lpwszFullPath);
+            }
+            else
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+        }
+    }
+    __finally {
+        RtlFreeHeap(hHeap, 0, usNtName_LinkTarget.Buffer);
+    }
+    else
+    {
+        // If path is invalid or does not exist -> return with appropriate error code
+        SetLastError(ERROR_PATH_NOT_FOUND);
+        return FALSE;
+    }
+
+    return result;
 }
 
 /******************************************************************************
@@ -919,37 +926,37 @@ CreateHardLinkA
 #else
 MyCreateHardLinkA
 #endif
-	(
-	LPCSTR szLinkName,
-	LPCSTR szLinkTarget,
-	LPSECURITY_ATTRIBUTES lpSecurityAttributes
-	)
+    (
+    LPCSTR szLinkName,
+    LPCSTR szLinkTarget,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes
+    )
 {
 #ifdef RTDL
-	if(!bRtdlFunctionsLoaded)
-		return FALSE;
+    if(!bRtdlFunctionsLoaded)
+        return FALSE;
 #endif // RTDL
 
-	DeclareUnicodeString(usLinkName);
-	DeclareUnicodeString(usLinkTarget);
+    DeclareUnicodeString(usLinkName);
+    DeclareUnicodeString(usLinkTarget);
 
-	// Create and allocate a UNICODE_STRING from the zero-terminated parameters
-	if(szLinkName)
-		RtlCreateUnicodeStringFromAsciiz(&usLinkName, szLinkName);
-	if(szLinkTarget)
-		RtlCreateUnicodeStringFromAsciiz(&usLinkTarget, szLinkTarget);
+    // Create and allocate a UNICODE_STRING from the zero-terminated parameters
+    if(szLinkName)
+        RtlCreateUnicodeStringFromAsciiz(&usLinkName, szLinkName);
+    if(szLinkTarget)
+        RtlCreateUnicodeStringFromAsciiz(&usLinkTarget, szLinkTarget);
 
-	BOOL result = CreateHardLinkW(usLinkName.Buffer, usLinkTarget.Buffer, lpSecurityAttributes);
+    BOOL result = CreateHardLinkW(usLinkName.Buffer, usLinkTarget.Buffer, lpSecurityAttributes);
 
-	// Free the allocated buffer
-	if(usLinkTarget.Buffer)
-		RtlFreeHeap(NtpGetProcessHeap(), 0, usLinkTarget.Buffer);
-	// Free the allocated buffer
-	if(usLinkName.Buffer)
-		RtlFreeHeap(NtpGetProcessHeap(), 0, usLinkName.Buffer);
+    // Free the allocated buffer
+    if(usLinkTarget.Buffer)
+        RtlFreeHeap(NtpGetProcessHeap(), 0, usLinkTarget.Buffer);
+    // Free the allocated buffer
+    if(usLinkName.Buffer)
+        RtlFreeHeap(NtpGetProcessHeap(), 0, usLinkName.Buffer);
 
-	// Return the result of CreateHardLinkW()
-	return result;
+    // Return the result of CreateHardLinkW()
+    return result;
 }
 
 BOOL Hardlink_Initialize()
@@ -958,86 +965,86 @@ BOOL Hardlink_Initialize()
 #define InitApi2(h, x) lpfn##x = (TFN##x)GetProcAddress(h, #x)
 
 #ifdef PREFERAPI
-	HMODULE hKernel32 = GetModuleHandleW(TEXT("kernel32.dll"));
-	if(hKernel32)
-	{
-		InitApi2(hKernel32, CreateHardLinkA);
-		InitApi2(hKernel32, CreateHardLinkW);
-	}
-	if(lpfnCreateHardLinkA && lpfnCreateHardLinkW)
-	{
-		dbg_printf("Retrieved fct. addresses:\n  CreateHardLinkA == %p; CreateHardLinkW == %p\n", lpfnCreateHardLinkA, lpfnCreateHardLinkW);
-		return TRUE;
-	}
+    HMODULE hKernel32 = GetModuleHandleW(TEXT("kernel32.dll"));
+    if(hKernel32)
+    {
+        InitApi2(hKernel32, CreateHardLinkA);
+        InitApi2(hKernel32, CreateHardLinkW);
+    }
+    if(lpfnCreateHardLinkA && lpfnCreateHardLinkW)
+    {
+        dbg_printf("Retrieved fct. addresses:\n  CreateHardLinkA == %p; CreateHardLinkW == %p\n", lpfnCreateHardLinkA, lpfnCreateHardLinkW);
+        return TRUE;
+    }
 #endif // PREFERAPI
 
 #ifdef RTDL
-	HMODULE hNtDll = GetModuleHandleW(TEXT("ntdll.dll"));
-	if(hNtDll)
-	{
-		InitApi(hNtDll, RtlCreateUnicodeStringFromAsciiz);
-		InitApi(hNtDll, ZwClose);
-		InitApi(hNtDll, ZwSetInformationFile);
-		InitApi(hNtDll, RtlPrefixUnicodeString);
-		InitApi(hNtDll, ZwOpenSymbolicLinkObject);
-		InitApi(hNtDll, ZwQuerySymbolicLinkObject);
-		InitApi(hNtDll, ZwOpenFile);
-		InitApi(hNtDll, RtlAllocateHeap);
-		InitApi(hNtDll, RtlFreeHeap);
-		InitApi(hNtDll, RtlDosPathNameToNtPathName_U);
-		InitApi(hNtDll, RtlInitUnicodeString);
-		InitApi(hNtDll, RtlDetermineDosPathNameType_U);
-		InitApi(hNtDll, RtlNtStatusToDosError);
-		InitApi(hNtDll, RtlCreateUnicodeString);
-		InitApi(hNtDll, RtlFreeUnicodeString);
-	}
-	bRtdlFunctionsLoaded = (
-		(RtlCreateUnicodeStringFromAsciiz != NULL) &
-		(ZwClose != NULL) &
-		(ZwSetInformationFile != NULL) &
-		(RtlPrefixUnicodeString != NULL) &
-		(ZwOpenSymbolicLinkObject != NULL) &
-		(ZwQuerySymbolicLinkObject != NULL) &
-		(ZwOpenFile != NULL) &
-		(RtlAllocateHeap != NULL) &
-		(RtlFreeHeap != NULL) &
-		(RtlDosPathNameToNtPathName_U != NULL) &
-		(RtlInitUnicodeString != NULL) &
-		(RtlDetermineDosPathNameType_U != NULL) &
-		(RtlNtStatusToDosError != NULL) &
-		(RtlCreateUnicodeString != NULL) &
-		(RtlFreeUnicodeString != NULL)
-		);
+    HMODULE hNtDll = GetModuleHandleW(TEXT("ntdll.dll"));
+    if(hNtDll)
+    {
+        InitApi(hNtDll, RtlCreateUnicodeStringFromAsciiz);
+        InitApi(hNtDll, ZwClose);
+        InitApi(hNtDll, ZwSetInformationFile);
+        InitApi(hNtDll, RtlPrefixUnicodeString);
+        InitApi(hNtDll, ZwOpenSymbolicLinkObject);
+        InitApi(hNtDll, ZwQuerySymbolicLinkObject);
+        InitApi(hNtDll, ZwOpenFile);
+        InitApi(hNtDll, RtlAllocateHeap);
+        InitApi(hNtDll, RtlFreeHeap);
+        InitApi(hNtDll, RtlDosPathNameToNtPathName_U);
+        InitApi(hNtDll, RtlInitUnicodeString);
+        InitApi(hNtDll, RtlDetermineDosPathNameType_U);
+        InitApi(hNtDll, RtlNtStatusToDosError);
+        InitApi(hNtDll, RtlCreateUnicodeString);
+        InitApi(hNtDll, RtlFreeUnicodeString);
+    }
+    bRtdlFunctionsLoaded = (
+        (RtlCreateUnicodeStringFromAsciiz != NULL) &
+        (ZwClose != NULL) &
+        (ZwSetInformationFile != NULL) &
+        (RtlPrefixUnicodeString != NULL) &
+        (ZwOpenSymbolicLinkObject != NULL) &
+        (ZwQuerySymbolicLinkObject != NULL) &
+        (ZwOpenFile != NULL) &
+        (RtlAllocateHeap != NULL) &
+        (RtlFreeHeap != NULL) &
+        (RtlDosPathNameToNtPathName_U != NULL) &
+        (RtlInitUnicodeString != NULL) &
+        (RtlDetermineDosPathNameType_U != NULL) &
+        (RtlNtStatusToDosError != NULL) &
+        (RtlCreateUnicodeString != NULL) &
+        (RtlFreeUnicodeString != NULL)
+        );
 #endif // RTDL
 
 #ifdef RTDL
 #ifdef PREFERAPI
-	if(bRtdlFunctionsLoaded)
-	{
-		lpfnCreateHardLinkA = MyCreateHardLinkA;
-		lpfnCreateHardLinkW = MyCreateHardLinkW;
-	}
+    if(bRtdlFunctionsLoaded)
+    {
+        lpfnCreateHardLinkA = MyCreateHardLinkA;
+        lpfnCreateHardLinkW = MyCreateHardLinkW;
+    }
 #endif // PREFERAPI
-	return bRtdlFunctionsLoaded;
+    return bRtdlFunctionsLoaded;
 #else // RTDL
-		lpfnCreateHardLinkA = MyCreateHardLinkA;
-		lpfnCreateHardLinkW = MyCreateHardLinkW;
+        lpfnCreateHardLinkA = MyCreateHardLinkA;
+        lpfnCreateHardLinkW = MyCreateHardLinkW;
 
-		return TRUE;
+        return TRUE;
 #endif // RTDL
 }
 
 __declspec(naked) inline HANDLE NtpGetProcessHeap()
 {
-	// The actual declarations of the PEB and TIB/TEB structures has been
-	// left out since they are not necessary for the functionality.
-	__asm{
-		// MOV  EAX, FS:[0]._TEB.Peb // FS points to TEB/TIB which has a pointer to the PEB
-		mov     eax, fs:0x30
-		// MOV  EAX, [EAX]._PEB.ProcessHeap // Get the process heap's handle
-		mov     eax, [eax+0x18]
-		retn
-	}
+    // The actual declarations of the PEB and TIB/TEB structures has been
+    // left out since they are not necessary for the functionality.
+    __asm{
+        // MOV  EAX, FS:[0]._TEB.Peb // FS points to TEB/TIB which has a pointer to the PEB
+        mov     eax, fs:0x30
+        // MOV  EAX, [EAX]._PEB.ProcessHeap // Get the process heap's handle
+        mov     eax, [eax+0x18]
+        retn
+    }
 }
 
 /******************************************************************************
@@ -1047,20 +1054,22 @@ __declspec(naked) inline HANDLE NtpGetProcessHeap()
  ******************************************************************************/
 
 #if defined(RTDL) || defined(PREFERAPI)
-	#pragma message("_________________________________________________________________________________________")
-	#pragma message("ATTENTION: Did call Hardlink_Initialize() before calling CreateHardLink() in your code???")
+  #ifdef NDEBUG  // 2012-01-23  HaSchm: Don't bother me in debug build
+    #pragma message("_________________________________________________________________________________________")
+    #pragma message("ATTENTION: Did call Hardlink_Initialize() before calling CreateHardLink() in your code???")
+  #endif
 #endif // defined(RTDL) || defined(PREFERAPI)
 
 #ifndef RTDL
-	#pragma message("_________________________________________________________________________________________")
-	#pragma message("WARNING:   You'll need to get ntdll.lib (from the DDK) to link to ntdll.dll statically!!!")
-	#pragma comment(lib,"ntdll.lib")
+    #pragma message("_________________________________________________________________________________________")
+    #pragma message("WARNING:   You'll need to get ntdll.lib (from the DDK) to link to ntdll.dll statically!!!")
+    #pragma comment(lib,"ntdll.lib")
 #endif // RTDL
 
 #if (_WIN32_WINNT > 0x0400)
-	#pragma message("_________________________________________________________________________________________")
-	#pragma message("WARNING:   This module exists for compatibility purposes with NT 4.0!")
-	#pragma message("           You defined a WINVER and _WIN32_WINNT higher than 0x0400, so there will be")
-	#pragma message("           conflicts with the header files from the SDK which define CreateHardLink().")
+    #pragma message("_________________________________________________________________________________________")
+    #pragma message("WARNING:   This module exists for compatibility purposes with NT 4.0!")
+    #pragma message("           You defined a WINVER and _WIN32_WINNT higher than 0x0400, so there will be")
+    #pragma message("           conflicts with the header files from the SDK which define CreateHardLink().")
 
 #endif
