@@ -281,7 +281,7 @@ public:
 
 
 /**
- * class for encasulating the collection of duplicates
+ * class for encapsulating the collection of duplicates
  */
 class DuplicateFileCollection {
 private:
@@ -737,7 +737,7 @@ public:
     }
 
     /**
-     * Setter for the attriute match flag
+     * Setter for the attribute match flag
      */
     void setDateMatch(bool newValue) {
         dateTimeMustMatch = newValue;
@@ -871,7 +871,7 @@ public:
     }
 
     /**
-     * Processes all duplicates and crestes hard links of the files
+     * Processes all duplicates and creates hard links of the files
      */
     void linkAllDuplicates() {
         INT64 i64SumSize = 0;

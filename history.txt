@@ -1,5 +1,5 @@
-Modification history for DFHL.exe
-=================================
+Modification history for DFHL
+==============================
 
 $Revision: 1.12 $
 $Date: 2012/10/22 12:26:11 $
@@ -21,6 +21,7 @@ Todo:
   time match?
 
 
+
 2012-10-22  BDK/HS
 - "release-2-5-DFHL-HS"
 - Output of some number of files or bytes additionally with %0.4g
@@ -28,8 +29,10 @@ Todo:
 - Option -q1 or -NoFileName
 - prog->deleteDuplicatesList() in level loop (to get correct
   "savings of ... bytes possible" with /i)
+
 2012-10-18  BDK/HS
 - fflush(stdout); fflush(stderr); added in DFHL.cpp
+
 2012-10-16  BDK/HS
 - Various counters changed from int to INT64 (and names with i64 prefix etc.)
   (because of overflow: Number of files compared: -1852943428
@@ -39,19 +42,23 @@ Todo:
 - Reinit DuplicateFileHardLinker.files (SortedFileCollection) in
   findDuplicates() (to get correct info display with /i)
 - More statistic values (i64HSFilesFound etc.) and some messages changed
+
 2012-10-15  BSK/HS
 - "release-2-5-DFHL-HS"
 - Try to rename backup back to original name on error
+
 2012-10-15  BSK/HS
 - "release-2-5-DFHL-HS"
 - Option "/e" = "Write error messages to standard output" added
 - Make sure that files or dir names are printed for errors (see logErrorInfo())
 - Extension for temp. backup changed to ".DfhlBackup" (instead of ".backup")
+
 2012-10-12  BSK/HS
 - "release-2-4-DFHL-HS"
 - File attribute comparison corrected
 - Ignore FILE_ATTRIBUTE_ARCHIVE in attribute comparison
 - fileAttributeMismatch and fileMTimeMismatch instead of fileMetaDataMismatch
+
 2012-10-12  BSK/HS
 - GPF from /o corrected (no delete de; in listDuplicates())
 - Don't supress statistic output with /q
@@ -59,27 +66,34 @@ Todo:
 - Show "Number of bytes saved" in statistics
 - Option "/n" = "Don't show files which are hard linked" added
 - Print "Parsing Directory Tree Level %i" if /i
+
 2012-02-24  BSK/HS
 - "release-2-3-DFHL-HS"
 - /i = "Process recursively, but every level individually" added
+
 2012-02-23  BSK/HS
 - "release-2-2-DFHL-HS"
 - Version number changed, tabs expanded, trailing spaces removed
 - Use crc32 and 16KiB instead of xor64 and 64KiB
+
 2012-02-23  BSK/HS
 - "release-2-1-DFHL-HS"
 - Set file1Name, file2Name before use in logVerbose
 - Reuse first 2 blocks of file 1 if possible
 - Return 1 as exit code for error (not -1)
+
 2012-02-06  BSK/HS
 - Check if both files are already linked before reading any data
 - logError ...trying to change attribute... removed
+
 2012-02-06  BSK/HS
 - generateHash() corrected and optimized
 - DfhlTest.bat added
+
 2012-01-23  BSK/HS
 - "beta-2-1-DFHL-HS"
 - Adapted to BSK dir structure, file names corrected, no functional change
+
 2012-01-23  BSK/HS:
 - "release-2-0-DFHL-Vendor"
 - Checkin of original "dfhl-source_2.0.zip" from https://www.jensscheffler.de/dfhl

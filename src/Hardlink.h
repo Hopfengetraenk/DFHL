@@ -7,7 +7,7 @@
 
   PREFERAPI:
     turns on the behavior that the module will use the real CreateHardLink()
-    funtion preferably over the one defined here. This is useful for maximum
+    function preferably over the one defined here. This is useful for maximum
     compatibility with future versions of Windows 2000/XP/2003 and their
     successors.
     For maximum compatibility with both, future versions and Windows 9x/Me

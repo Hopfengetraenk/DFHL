@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define LONG_FILENAME_PREFIX    L"\\\\?\\" // Prefix to put ahead of a long path for Windows API
 
 
-/** Flag if list of hard linking should be suppredded (2012-10-12  HaSchm) */
+/** Flag if list of hard linking should be suppressed (2012-10-12  HaSchm) */
 extern bool boNoFileNameLog;
 
 
@@ -53,7 +53,7 @@ public:
 
 
 /**
- * Comtainer class which represents a folder in the file system and creates the directory hierarchy in the file system
+ * Container class which represents a folder in the file system and creates the directory hierarchy in the file system
  */
 class Path : public FolderEntry {
 private:
@@ -245,14 +245,14 @@ public:
     Path* parsePath(LPCWSTR pathStr);
 
     /**
-     * Retrievs a list of items in the given folder
+     * Retrieves a list of items in the given folder
      * @return Collection of FolderEntry Objects
      * @throws LPWSTR If the file finding generates a unexpected error (Not access denied)
      */
     Collection* getFolderContent(Path* folder);
 
     /**
-     * Links two files on hard disk by deletiong one and linking the name of this to the other
+     * Links two files on hard disk by deleting one and linking the name of this to the other
      * @param file1 File name of the first file
      * @param file2 File name of the second file to link to
      * @return boolean value if operation was successful
