@@ -95,6 +95,86 @@ WCHAR* pretty_number2(UINT64 num) //char *outBuff,
 
 
 
+//=======================================================================
+// exception handling workshop
+//
+
+//#include "stdafx.h"
+//#include <stdio.h>
+//#include <stdlib.h>
+
+//#include <tchar.h>
+
+
+#include <signal.h>
+void SignalHandler(int signal)
+{
+  printf("Signal %d", signal);
+  throw "!Access Violation!";
+}
+//
+//#include <string>
+//#include <eh.h>
+//void install_SEH_Translate_Handler() {
+//  // Be sure to enable "Yes with SEH Exceptions (/EHa)" in C++ / Code Generation;
+//  _set_se_translator([](unsigned int u, EXCEPTION_POINTERS *pExp) {
+//    std::string error = "SE Exception: ";
+//    switch ( u ) {
+//
+//    case 0xC0000005:
+//      error += "Access Violation";
+//      break;
+//
+//    default:
+//      char result[11];
+//      sprintf_s(result, 11, "0x%08X", u);
+//      error += result;
+//    };
+//    throw std::exception(error.c_str());
+//  });
+//
+//}
+//
+//int main()
+//{
+//  // Solution0: Not working
+//  install_SEH_Translate_Handler();
+//
+//
+//  // Solution1: catch exception via signal() and route it to an C++ exception
+//  typedef void(*SignalHandlerPointer) (int);
+//  SignalHandlerPointer previousHandler;
+//  previousHandler = signal(SIGSEGV, SignalHandler);
+//
+//  //try {
+//  //  *(int *)0 = 0;// Baaaaaaad thing that should never be caught. You should write good code in the first place.
+//  //}
+//  //catch ( char *e )
+//  //{
+//  //  printf("Exception Caught: %s\n", e);
+//  //}
+//
+//// Solution2: Structured Exception Handling (C/C++)
+//// https://msdn.microsoft.com/en-us/library/swezty51.aspx
+//
+//  __try {
+//    *(int *)0 = 0;// Baaaaaaad thing that should never be caught. You should write good code in the first place.
+//  }
+//  __except ( EXCEPTION_EXECUTE_HANDLER ) {
+//    printf("Error");
+//  }
+//
+//  printf("Now we continue, unhindered, like the abomination never happened. (I am an EVIL genius)\n");
+//  printf("But please kids, DONT TRY THIS AT HOME ;)\n");
+//
+//}
+
+
+//=================================================================
+
+
+
+
 // Global Variables
 // *******************************************
 /** Flag if list should be displayed */
@@ -450,7 +530,19 @@ private:
      * Compares the given 2 files content
      */
     CompareResult compareFiles(File* file1, File* file2, bool boNewFile1) {
+
+      // Solution1: catch exception via signal() and route it to an C++ exception
+      typedef void(*SignalHandlerPointer) (int);
+      SignalHandlerPointer previousHandler;
+      previousHandler = signal(SIGSEGV, SignalHandler);
+
+
       try {
+
+//        Error Test
+//        volatile int *pInt = 0x00000000;
+//        *pInt = 20;
+
           if (boNewFile1) {
               boBlock1fRead = boBlock1Read = false;
               file1->copyName(cleanString(file1Name));
@@ -679,13 +771,13 @@ private:
 
           }
       catch ( ... ) {
-        logError( L"EXCEPTION in" 
-                  " DuplicateFileHardLinker::compareFiles( file1, file2 )" 
-                  " where" "\n"
-                  "  file1 = %s " "\n"
-                  "  file2 = %s " "\n",
-          file1->getName(), 
-          file2->getName()
+        logError(L"EXCEPTION in"
+          " DuplicateFileHardLinker::compareFiles( file1, file2 )"
+          " where" "\n"
+          "  file1 = %s " "\n"
+          "  file2 = %s " "\n",
+          (file1 == 0) ? L"<Empty>": file1->getName(),
+          (file2 == 0) ? L"<Empty>": file2->getName()
          );
       }
     }
@@ -1208,6 +1300,9 @@ bool parseCommandLine(int argc, char* argv[], DuplicateFileHardLinker* prog) {
     return true;
 }
 
+
+
+
 /**
  * Main runnable and entry point for executing the application
  * @param argc Argument Counter
@@ -1215,6 +1310,8 @@ bool parseCommandLine(int argc, char* argv[], DuplicateFileHardLinker* prog) {
  * @return Application Return code
  */
 int main(int argc, char* argv[]) {
+
+
     int iTotalDuplicateCount = 0;
     DuplicateFileHardLinker* prog = new DuplicateFileHardLinker();
 

@@ -21,9 +21,10 @@ Todo:
   time match?
 
 2018-07-05  Djamana
-- optimised commandline parser support fot combining options like for ex. /hs
-- reordered options output in helpscreen
+- optimised commandline parser support for combining options like for ex. /hs
+- reordered options in helpscreen
 - Added pretty print for bytes so now we've KB, MB, GB...
+- add SEH handler to compareFiles
 
 2012-10-22  BDK/HS
 - "release-2-5-DFHL-HS"
