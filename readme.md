@@ -33,23 +33,35 @@ Limitations
 Command Line Parameters
 -----------------------
 ```
-dfhl \[options\] \[path\] \[...\]
+DFHL \[options\] \[path\] \[...\]
 
-Options:
-/?	Shows this help screen
-/a	File attributes must match for linking
-/d	Debug mode
-/h	Process hidden files
-/j	Also follow junctions (=reparse points) in filesystem
-/l	Hard links for files. If not specified, tool will just read (test) for duplicates
-/m	Also process small files <1024 bytes, they are skipped by default
-/o	List duplicate file result to stdout
-/q	Silent mode
-/r	Runs recursively through the given folder list
-/s	Process system files
-/t	Time + Date of files must match
-/v	Verbose mode
-/w	Show statistics after processing
+  /l	Create hard >links for files (default is just read/test for duplicates)
+
+  /r	Runs >recursively through the given folder list
+  /i	Process recursively, but every level >individually
+  /j	Also follow >junctions (=reparse points) in file system
+
+  /m	Also process s>mall files <1024 bytes, they are skipped by default
+  /h	Process >hidden files
+  /s	Process >system files
+  /a	File >attributes must match for linking (expect Archive)
+  /n	File >names must match for linking
+  /t	>Time + Date of files must match
+
+  /q	>Quite mode
+  /v	>Verbose mode
+  /d	>Debug mode
+  /e	Write >error messages to standard output (not stderr)
+  /o	List duplicate file result to std>out (for use without /l, /q)
+  /q1	Don't show files which are hard linked (alias /NoFileName)
+  /w	Sho>w statistics after processing
+
+  /?	Shows this help screen
+```
+
+Example:
+```
+  DFHL /l /r /hs .
 ```
 
 Use Cases
