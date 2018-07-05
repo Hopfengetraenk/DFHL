@@ -35,8 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MIN_FILE_SIZE           1024 // Minimum file size so that hard linking will be checked...
 
 #define PROGRAM_NAME        L"Duplicate File Hard Linker"
-#define PROGRAM_VERSION     L"Version 2.5"
-#define PROGRAM_AUTHOR      L"Jens Scheffler, Oliver Schneider, Hans Schmidts"
+#define PROGRAM_VERSION     L"Version 2.6"
+#define PROGRAM_AUTHOR      L"Jens Scheffler, Oliver Schneider, Hans Schmidts, Djamana"
 
 enum CompareResult {
     EQUAL,          // File compare was successful and content is matching
@@ -44,6 +44,55 @@ enum CompareResult {
     SKIP,           // File 1 should not be processed (e.g. open error)
     DIFFERENT       // Files differ
 };
+
+/**
+* Helper function to prints nicer to read numbers for ex. for bytes (KB, MB, GB, etc)
+*    divides number by 1024 and just adds suffixes (K, M, G, etc)
+* @param outBuff char pointer to buffer for output
+* @param num    int64 Number to converted
+* @param RetVal global string buffer with the pretty printed number
+* ATTENTION this global string buffer makes that function not thread save
+*/
+#include <math.h>
+#define uint unsigned int
+#define  PP_EXT L""
+#define  MAX_NUM_LENGTH   3 +   1 +     1 + sizeof(PP_EXT)
+//     </1024 -> 3 Digits >>+  "."+<Digit>+ "B"
+WCHAR* _pretty_number(WCHAR *_buf, UINT64 num) //char *outBuff,
+{
+  WCHAR  *suffixes = L" KMGTPE";
+  uint s = 0; // which suffix to use
+  double count = num;
+  while ( count >= 1024 && (s++ < 7) )
+    count /= 1024;
+
+//  if ( count - floor(count) == 0.0 )
+    wsprintf( _buf, L"%d %c" PP_EXT, (int)count, suffixes[s]);
+ // else
+ //   wsprintf( _buf, L"%.1f" PP_EXT, count, suffixes[s]);
+
+  return _buf;
+}
+
+
+WCHAR buf[MAX_NUM_LENGTH];
+WCHAR* pretty_number(UINT64 num) //char *outBuff,
+{
+    return _pretty_number(buf, num);
+}
+
+// pretty_number2()
+//   use in cases like this:
+//   logInfo(L"...%s  files that are  %sB bytes...", pretty_number(15), pretty_number2(16328);
+//   since I use global string buffers here 
+//   using pretty_number() twice it first will get overwritten resulting in show the last twice.
+
+WCHAR buf2[MAX_NUM_LENGTH];
+WCHAR* pretty_number2(UINT64 num) //char *outBuff,
+{
+  return _pretty_number(buf2, num);
+}
+
 
 
 // Global Variables
@@ -401,230 +450,244 @@ private:
      * Compares the given 2 files content
      */
     CompareResult compareFiles(File* file1, File* file2, bool boNewFile1) {
-        if (boNewFile1) {
-            boBlock1fRead = boBlock1Read = false;
-            file1->copyName(cleanString(file1Name));
-        }
-        file2->copyName(cleanString(file2Name));
-        logVerbose(L"Comparing files \"%s\" and \"%s\".", file1Name, file2Name);
-        Statistics::getInstance()->i64FileCompares++;
-
-        // optimization: check the file hash codes (if existing already)
-        if (file1->boIsHashAvailable() && file2->boIsHashAvailable() && file1->u32GetHash() != file2->u32GetHash()) {
-            // okay, hashes are different, files seem to differ!
-            logVerbose(L"Files differ in content (hash).");
-            Statistics::getInstance()->i64HashCompares++;
-            Statistics::getInstance()->i64HashComparesHit1++;
-            return DIFFERENT;
-        }
-
-        // check for attributes matching
-        if (boNameMustMatch && (wcscmp(file1->getName(),file2->getName())!=0)) {
-            logVerbose(L"Names of files do not match (\"%s\"!=\"%s\"), skipping.",file1->getName(),file2->getName());
-            Statistics::getInstance()->i64FileNameMismatch++;
-            return DIFFERENT;
-        }
-
-        // check for attributes matching
-        if (attributeMustMatch) {
-            /* 2012-10-12  HaSchm */
-            DWORD dwAttr1, dwAttr2;
-            dwAttr1 = file1->getAttributes() & (DWORD)(~(DWORD)FILE_ATTRIBUTE_ARCHIVE);
-            dwAttr2 = file2->getAttributes() & (DWORD)(~(DWORD)FILE_ATTRIBUTE_ARCHIVE);
-            if (dwAttr1!=dwAttr2) {
-                logVerbose(L"Attributes of files do not match (0x%lX!=0x%lX), skipping.",dwAttr1,dwAttr2);
-                Statistics::getInstance()->i64FileAttributeMismatch++;
-                return DIFFERENT;
-            }
-        }
-
-        // check for time stamp matching
-        if (dateTimeMustMatch && (
-                file1->getLastModifyTime().dwHighDateTime != file2->getLastModifyTime().dwHighDateTime ||
-                file1->getLastModifyTime().dwLowDateTime  != file2->getLastModifyTime().dwLowDateTime
-                )) {
-            logVerbose(L"Modification timestamps of files do not match, skipping.");
-            Statistics::getInstance()->i64FileMTimeMismatch++;
-            return DIFFERENT;
-        }
-
-        // doublecheck data consistency!
-        if (file1->equals(file2)) {
-            logError(L"Same file \"%s\"found as duplicate, ignoring!", file1Name);
-            Statistics::getInstance()->fileCompareProblems++;
-            return SKIP;
-        }
-
-        // Open File 2
-        UnbufferedFileStream* fs2 = new UnbufferedFileStream(file2);
-        if (!fs2->open()) {
-            logError(L"Unable to open file \"%s\"", file2Name);
-            delete fs2;
-            Statistics::getInstance()->fileCompareProblems++;
-            return DIFFERENT; // assume that only file2 is not to be opened, signal different file
-        }
-
-        // Open File 1
-        UnbufferedFileStream* fs1 = new UnbufferedFileStream(file1);
-        if (!fs1->open()) {
-            logError(L"Unable to open file \"%s\"", file1Name);
-            fs2->close();
-            delete fs1;
-            delete fs2;
-            Statistics::getInstance()->fileCompareProblems++;
-            return SKIP; // file 1 can not be opened, skip this file for further compares!
-        }
-
-        // Check if both files are already linked
-        // 2012-02-06  HaSchm: Before reading any data or calculation hash, because
-        // dfhl may be used to hard link additional files where existing files are
-        // already linked (e.g. differnet backups of own data).
-        if (fs1->getFileDetails(&info1) && fs2->getFileDetails(&info2)) {
-            if (info1.dwVolumeSerialNumber == info2.dwVolumeSerialNumber &&
-                info1.nFileIndexHigh == info2.nFileIndexHigh &&
-                info1.nFileIndexLow == info2.nFileIndexLow) {
-
-                logVerbose(L"Files are already hard linked, skipping.");
-                fs1->close();
-                fs2->close();
-                delete fs1;
-                delete fs2;
-                Statistics::getInstance()->i64FileAlreadyLinked++;
-                return SAME;
-            }
-        }
+      try {
+          if (boNewFile1) {
+              boBlock1fRead = boBlock1Read = false;
+              file1->copyName(cleanString(file1Name));
+          }
+          file2->copyName(cleanString(file2Name));
+          logVerbose(L"Comparing files \"%s\" and \"%s\".", file1Name, file2Name);
+          Statistics::getInstance()->i64FileCompares++;
 
 
-        // Optimization #345:
-        // Maybe we already have a hash of file #1, so we start processing file #2 first...
+          // optimization: check the file hash codes (if existing already)
+          if (file1->boIsHashAvailable() && file2->boIsHashAvailable() && file1->u32GetHash() != file2->u32GetHash()) {
+              // okay, hashes are different, files seem to differ!
+              logVerbose(L"Files differ in content (hash).");
+              Statistics::getInstance()->i64HashCompares++;
+              Statistics::getInstance()->i64HashComparesHit1++;
+              return DIFFERENT;
+          }
 
-        // Read File Content and compare
-        INT64 i64BytesToRead = file2->i64GetSize();
-        int read2;
-        read2 = fs2->read(block2f, FIRST_BLOCK_SIZE);
+          // check for attributes matching
+          if (boNameMustMatch && (wcscmp(file1->getName(),file2->getName())!=0)) {
+              logVerbose(L"Names of files do not match (\"%s\"!=\"%s\"), skipping.",file1->getName(),file2->getName());
+              Statistics::getInstance()->i64FileNameMismatch++;
+              return DIFFERENT;
+          }
 
-        // calculate the hash of the block of file 2 if not done so far...
-        if (!file2->boIsHashAvailable()) {
-            file2->vSetHash(u32GenerateHash(block2f, read2));  // 2012-02-03  HaSchm  FIRST_BLOCK_SIZE
+          // check for attributes matching
+          if (attributeMustMatch) {
+              /* 2012-10-12  HaSchm */
+              DWORD dwAttr1, dwAttr2;
+              dwAttr1 = file1->getAttributes() & (DWORD)(~(DWORD)FILE_ATTRIBUTE_ARCHIVE);
+              dwAttr2 = file2->getAttributes() & (DWORD)(~(DWORD)FILE_ATTRIBUTE_ARCHIVE);
+              if (dwAttr1!=dwAttr2) {
+                  logVerbose(L"Attributes of files do not match (0x%lX!=0x%lX), skipping.",dwAttr1,dwAttr2);
+                  Statistics::getInstance()->i64FileAttributeMismatch++;
+                  return DIFFERENT;
+              }
+          }
 
-            // If we have a hash of file #1 also, we can compare now...
-            if (file1->boIsHashAvailable() && file1->u32GetHash() != file2->u32GetHash()) {
-                // okay, hashes are different, files seem to differ!
-                logVerbose(L"Files differ in content (hash).");
-                fs1->close();
-                fs2->close();
-                delete fs1;
-                delete fs2;
-                Statistics::getInstance()->i64HashCompares++;
-                Statistics::getInstance()->i64HashComparesHit2++;
-                return DIFFERENT;
-            }
-        }
+          // check for time stamp matching
+          if (dateTimeMustMatch && (
+                  file1->getLastModifyTime().dwHighDateTime != file2->getLastModifyTime().dwHighDateTime ||
+                  file1->getLastModifyTime().dwLowDateTime  != file2->getLastModifyTime().dwLowDateTime
+                  )) {
+              logVerbose(L"Modification timestamps of files do not match, skipping.");
+              Statistics::getInstance()->i64FileMTimeMismatch++;
+              return DIFFERENT;
+          }
 
-        // Read File Content of file #1 now and compare
-        int read1;
-        if (boBlock1fRead) {
-            read1 = fs1->skip(FIRST_BLOCK_SIZE);
-        }
-        else {
-            read1 = fs1->read(block1f, FIRST_BLOCK_SIZE);
-            boBlock1fRead = true;
-        }
+          // doublecheck data consistency!
+          if (file1->equals(file2)) {
+              logError(L"Same file \"%s\"found as duplicate, ignoring!", file1Name);
+              Statistics::getInstance()->fileCompareProblems++;
+              return SKIP;
+          }
 
-        // generate hash for file #1 if not done so far...
-        if (!file1->boIsHashAvailable()) {
-            file1->vSetHash(u32GenerateHash(block1f, read1));  // 2012-02-03  HaSchm  FIRST_BLOCK_SIZE
+          // Open File 2
+          UnbufferedFileStream* fs2 = new UnbufferedFileStream(file2);
+          if (!fs2->open()) {
+              logError(L"Unable to open file \"%s\"", file2Name);
+              delete fs2;
+              Statistics::getInstance()->fileCompareProblems++;
+              return DIFFERENT; // assume that only file2 is not to be opened, signal different file
+          }
 
-            // Finally we can be sure that we have hashes of both files, compare them first (faster?)
-            if (file1->u32GetHash() != file2->u32GetHash()) {
-                // okay, hashes are different, files seem to differ!
-                logVerbose(L"Files differ in content (hash).");
-                fs1->close();
-                fs2->close();
-                delete fs1;
-                delete fs2;
-                Statistics::getInstance()->i64HashCompares++;
-                Statistics::getInstance()->i64HashComparesHit3++;
-                return DIFFERENT;
-            }
-        }
+          // Open File 1
+          UnbufferedFileStream* fs1 = new UnbufferedFileStream(file1);
+          if (!fs1->open()) {
+              logError(L"Unable to open file \"%s\"", file1Name);
+              fs2->close();
+              delete fs1;
+              delete fs2;
+              Statistics::getInstance()->fileCompareProblems++;
+              return SKIP; // file 1 can not be opened, skip this file for further compares!
+          }
 
-        // compare all bytes now - as the hashes are equal
-        for (int i = 0; i < read1; i++) {
-            if (block1f[i] != block2f[i]) {
-                logVerbose(L"Files differ in content.");
-                fs1->close();
-                fs2->close();
-                delete fs1;
-                delete fs2;
-                Statistics::getInstance()->i64FileContentDifferFirstBlock++;
-                return DIFFERENT;
-            }
-        }
+          // Check if both files are already linked
+          // 2012-02-06  HaSchm: Before reading any data or calculation hash, because
+          // dfhl may be used to hard link additional files where existing files are
+          // already linked (e.g. differnet backups of own data).
+          if (fs1->getFileDetails(&info1) && fs2->getFileDetails(&info2)) {
+              if (info1.dwVolumeSerialNumber == info2.dwVolumeSerialNumber &&
+                  info1.nFileIndexHigh == info2.nFileIndexHigh &&
+                  info1.nFileIndexLow == info2.nFileIndexLow) {
 
-        // okay, now optimized fast start was done, run in a loop to compare the rest of the file content!
-        i64BytesToRead -= read1;
-        bool switcher = true; // helper variable for performance optimization
-        bool boFistBlock1Read = true; // helper variable for performance optimization
-        while (i64BytesToRead > 0) {
+                  logVerbose(L"Files are already hard linked, skipping.");
+                  fs1->close();
+                  fs2->close();
+                  delete fs1;
+                  delete fs2;
+                  Statistics::getInstance()->i64FileAlreadyLinked++;
+                  return SAME;
+              }
+          }
 
-            // Read Blocks - Performance boosted: read alternating to mimimize head shifts... ;-)
-            if (switcher) {
-                if (boFistBlock1Read && boBlock1Read) {
-                    read1 = fs1->skip(BLOCK_SIZE);
-                }
-                else {
-                    read1 = fs1->read(block1, BLOCK_SIZE);
-                    boBlock1Read = boFistBlock1Read;
-                }
-                read2 = fs2->read(block2, BLOCK_SIZE);
-            } else {
-                read2 = fs2->read(block2, BLOCK_SIZE);
-                read1 = fs1->read(block1, BLOCK_SIZE);
-                boBlock1Read = false;
-            }
-            boFistBlock1Read = false;
 
-            // change the state for the next read operation
-            switcher = !switcher; // alternate read
+          // Optimization #345:
+          // Maybe we already have a hash of file #1, so we start processing file #2 first...
 
-            // Compare Data
-            i64BytesToRead -= read1;
-            if (read1 != read2 || read1 == 0) {
-                if (logLevel>LOG_VERBOSE || !boNoStdErr) {
-                    logErrorInfo(L"Comparing files \"%s\" and \"%s\".", file1Name, file2Name);  /* 2012-10-15  HaSchm */
-                }
-                logError(L"File length differ or read error! This _should_ not happen!?!?");
-                fs1->close();
-                fs2->close();
-                delete fs1;
-                delete fs2;
-                Statistics::getInstance()->fileCompareProblems++;
-                return DIFFERENT;
-            }
+          // Read File Content and compare
+          INT64 i64BytesToRead = file2->i64GetSize();
+          int read2;
+          read2 = fs2->read(block2f, FIRST_BLOCK_SIZE);
 
-            for (int i = 0; i < read1; i++) {
-                if (block1[i] != block2[i]) {
-                    logVerbose(L"Files differ in content.");
-                    fs1->close();
-                    fs2->close();
-                    delete fs1;
-                    delete fs2;
-                    Statistics::getInstance()->i64FileContentDifferLater++;
-                    return DIFFERENT;
-                }
-            }
-        }
+          // calculate the hash of the block of file 2 if not done so far...
+          if (!file2->boIsHashAvailable()) {
+              file2->vSetHash(u32GenerateHash(block2f, read2));  // 2012-02-03  HaSchm  FIRST_BLOCK_SIZE
 
-        // Close Files
-        fs1->close();
-        fs2->close();
-        delete fs1;
-        delete fs2;
+              // If we have a hash of file #1 also, we can compare now...
+              if (file1->boIsHashAvailable() && file1->u32GetHash() != file2->u32GetHash()) {
+                  // okay, hashes are different, files seem to differ!
+                  logVerbose(L"Files differ in content (hash).");
+                  fs1->close();
+                  fs2->close();
+                  delete fs1;
+                  delete fs2;
+                  Statistics::getInstance()->i64HashCompares++;
+                  Statistics::getInstance()->i64HashComparesHit2++;
+                  return DIFFERENT;
+              }
+          }
 
-        logVerbose(L"Files are equal, hard link possible.");
-        Statistics::getInstance()->i64FileContentSame++;
-        return EQUAL;
+          // Read File Content of file #1 now and compare
+          int read1;
+          if (boBlock1fRead) {
+              read1 = fs1->skip(FIRST_BLOCK_SIZE);
+          }
+          else {
+              read1 = fs1->read(block1f, FIRST_BLOCK_SIZE);
+              boBlock1fRead = true;
+          }
+
+          // generate hash for file #1 if not done so far...
+          if (!file1->boIsHashAvailable()) {
+              file1->vSetHash(u32GenerateHash(block1f, read1));  // 2012-02-03  HaSchm  FIRST_BLOCK_SIZE
+
+              // Finally we can be sure that we have hashes of both files, compare them first (faster?)
+              if (file1->u32GetHash() != file2->u32GetHash()) {
+                  // okay, hashes are different, files seem to differ!
+                  logVerbose(L"Files differ in content (hash).");
+                  fs1->close();
+                  fs2->close();
+                  delete fs1;
+                  delete fs2;
+                  Statistics::getInstance()->i64HashCompares++;
+                  Statistics::getInstance()->i64HashComparesHit3++;
+                  return DIFFERENT;
+              }
+          }
+
+          // compare all bytes now - as the hashes are equal
+          for (int i = 0; i < read1; i++) {
+              if (block1f[i] != block2f[i]) {
+                  logVerbose(L"Files differ in content.");
+                  fs1->close();
+                  fs2->close();
+                  delete fs1;
+                  delete fs2;
+                  Statistics::getInstance()->i64FileContentDifferFirstBlock++;
+                  return DIFFERENT;
+              }
+          }
+
+          // okay, now optimized fast start was done, run in a loop to compare the rest of the file content!
+          i64BytesToRead -= read1;
+          bool switcher = true; // helper variable for performance optimization
+          bool boFistBlock1Read = true; // helper variable for performance optimization
+          while (i64BytesToRead > 0) {
+
+              // Read Blocks - Performance boosted: read alternating to mimimize head shifts... ;-)
+              if (switcher) {
+                  if (boFistBlock1Read && boBlock1Read) {
+                      read1 = fs1->skip(BLOCK_SIZE);
+                  }
+                  else {
+                      read1 = fs1->read(block1, BLOCK_SIZE);
+                      boBlock1Read = boFistBlock1Read;
+                  }
+                  read2 = fs2->read(block2, BLOCK_SIZE);
+              } else {
+                  read2 = fs2->read(block2, BLOCK_SIZE);
+                  read1 = fs1->read(block1, BLOCK_SIZE);
+                  boBlock1Read = false;
+              }
+              boFistBlock1Read = false;
+
+              // change the state for the next read operation
+              switcher = !switcher; // alternate read
+
+              // Compare Data
+              i64BytesToRead -= read1;
+              if (read1 != read2 || read1 == 0) {
+                  if (logLevel>LOG_VERBOSE || !boNoStdErr) {
+                      logErrorInfo(L"Comparing files \"%s\" and \"%s\".", file1Name, file2Name);  /* 2012-10-15  HaSchm */
+                  }
+                  logError(L"File length differ or read error! This _should_ not happen!?!?");
+                  fs1->close();
+                  fs2->close();
+                  delete fs1;
+                  delete fs2;
+                  Statistics::getInstance()->fileCompareProblems++;
+                  return DIFFERENT;
+              }
+
+              for (int i = 0; i < read1; i++) {
+                  if (block1[i] != block2[i]) {
+                      logVerbose(L"Files differ in content.");
+                      fs1->close();
+                      fs2->close();
+                      delete fs1;
+                      delete fs2;
+                      Statistics::getInstance()->i64FileContentDifferLater++;
+                      return DIFFERENT;
+                  }
+              }
+          }
+
+          // Close Files
+          fs1->close();
+          fs2->close();
+          delete fs1;
+          delete fs2;
+
+          logVerbose(L"Files are equal, hard link possible.");
+          Statistics::getInstance()->i64FileContentSame++;
+          return EQUAL;
+
+          }
+      catch ( ... ) {
+        logError( L"EXCEPTION in" 
+                  " DuplicateFileHardLinker::compareFiles( file1, file2 )" 
+                  " where" "\n"
+                  "  file1 = %s " "\n"
+                  "  file2 = %s " "\n",
+          file1->getName(), 
+          file2->getName()
+         );
+      }
     }
 
     /**
@@ -745,7 +808,7 @@ public:
 
     /**
      * Adds a path to the collection of path's to process
-     * @param path Path name to add to the collection (e.g. "D:\dir")
+     * @param path  Path name to add to the collection (e.g. "D:\dir")
      */
     void addPath(LPWSTR path) {
         Path* parsedPath = fs->parsePath(path);
@@ -784,7 +847,7 @@ public:
                     // we have a file entry
                     File* aFile = (File*) aItem;
 
-                    // Check if filesize is big enough and contains data
+                    // Check if file-size is big enough and contains data
                     if (aFile->i64GetSize() == 0 || (!smallFiles && aFile->i64GetSize() < MIN_FILE_SIZE)) {
                         logDebug(L"ignoring file \"%s\", is too small.", aFile->getName());
                         Statistics::getInstance()->i64FileTooSmall++;
@@ -816,7 +879,7 @@ public:
 
         // Step 2: Walk over all relevant files
         fflush(stderr);
-        logInfo(L"%i (%0.4g) files, %I64i (%0.4g) bytes, comparing relevant files.", files->getFileCount(), 1.0*files->getFileCount(), files->i64GetTotalFileSize(), 1.0*files->i64GetTotalFileSize());
+        logInfo(L"%i ( %s ) files, %I64i ( %sB ) bytes, comparing relevant files.", files->getFileCount(), pretty_number( files->getFileCount() ), files->i64GetTotalFileSize(), pretty_number2( files->i64GetTotalFileSize()) );
         fflush(stdout);
         /* Note: Count and size without ignored files */
         SizeGroup* sg;
@@ -866,8 +929,9 @@ public:
 
         // Step 3: Show search results
         fflush(stderr);
-        logInfo(L"Found %i duplicate files, savings of %I64i (%0.4g) bytes possible.", duplicates->getDuplicateCount(), duplicates->i64GetTotalDuplicateSize(), 1.0*duplicates->i64GetTotalDuplicateSize());
+        logInfo(L"Found %i duplicate files, savings of %I64i ( %sB ) bytes possible.", duplicates->getDuplicateCount(), duplicates->i64GetTotalDuplicateSize(), pretty_number( duplicates->i64GetTotalDuplicateSize()) );
         fflush(stdout);
+
     }
 
     /**
@@ -903,7 +967,7 @@ public:
                 delete de;
             }
             fflush(stderr);
-            logInfo(L"Hard linking done, %I64i (%0.4g) bytes saved.", i64SumSize, 1.0*i64SumSize);
+            logInfo(L"Hard linking done, %I64i ( %s) bytes saved.", i64SumSize, pretty_number( i64SumSize) );
             fflush(stdout);
             Statistics::getInstance()->i64BytesSaved+=i64SumSize;  /* 2012-10-12  HaSchm */
         }
@@ -962,117 +1026,162 @@ bool parseCommandLine(int argc, char* argv[], DuplicateFileHardLinker* prog) {
     bool pathAdded = false;
 
     // iterate over all arguments...
-    for (int i=1; i<argc; i++) {
+    for (int i = 1; i<argc; i++) {
 
-        // first check if command line option
+        // is argv a command line option ?
         if (argv[i][0] == '-' || argv[i][0] == '/') {
 
-            if (strlen(argv[i]) == 2) {
-                switch (argv[i][1]) {
+         // check for longer options
+            if (stricmp( &argv[i][1], "NoFileName" ) == 0
+              || strcmp( &argv[i][1], "q1"         ) == 0) {
+
+              boNoFileNameLog = true;  
+            } else if ( strcmp(&argv[i][1], "FuckNow?") == 0 ) {
+              logInfo(L"SECRET FOUND: Well - wow I'm glad ya ask me.");
+
+            } else {
+
+           // check for one char options
+              while(char option = *++argv[i] ) {
+
+                switch (option) {
                 case '?':
                     // Show program usage
+
+                    // Get programName
                     WCHAR programName[MAX_PATH_LENGTH];
-                    mbstowcs(programName,argv[0],sizeof(programName));
-                    logInfo(PROGRAM_NAME);
-                    logInfo(L"Program to link duplicate files in several paths on one disk.");
-                    logInfo(L"%s - %s", PROGRAM_VERSION, PROGRAM_AUTHOR);
+                    mbstowcs(programName, argv[0], sizeof(programName));
+
+                    logInfo(  PROGRAM_NAME);
+                    logInfo(  L"Program to link duplicate files in several paths on one disk.");
+                    logInfo(  L"%s - %s", PROGRAM_VERSION, PROGRAM_AUTHOR);
+//                    logInfo(  L"");
+//                    logInfo(  L"NOTE: Use this tool on your own risk!");
+                    logInfo(  L"");
+                    logInfo(  L"Usage:");
+                    logInfo(  L"  %s [options] [path] [...]", programName);
                     logInfo(L"");
-                    logInfo(L"NOTE: Use this tool on your own risk!");
+                    logInfo(  L"Options:");
                     logInfo(L"");
-                    logInfo(L"Usage:");
-                    logInfo(L"%s [options] [path] [...]", programName);
-                    logInfo(L"Options:");
-                    logInfo(L"/?\tShows this help screen");
-                    logInfo(L"/a\tFile attributes must match for linking (expect Archive)");
-                    logInfo(L"/d\tDebug mode");
-                    logInfo(L"/e\tWrite error messages to standard output (not stderr)");  /* 2012-10-15  HaSchm */
-                    logInfo(L"/h\tProcess hidden files");
-                    logInfo(L"/i\tProcess recursively, but every level individually");
-                    logInfo(L"/j\tAlso follow junctions (=reparse points) in filesystem");
-                    //logInfo(L"/l\tHard links for files. If not specified, tool will just read (test) for duplicates");
-                    logInfo(L"/l\tCreate hard links for files (default is just read/test for duplicates)"); // 2012-01-23  HaSchm
-                    logInfo(L"/m\tAlso process small files <1024 bytes, they are skipped by default");
-                    logInfo(L"/n\tFile names must match for linking");
-                    //logInfo(L"/NoFileName\tDon't show files which are hard linked");
-                    logInfo(L"/o\tList duplicate file result to stdout (for use without /l, /q)");
-                    logInfo(L"/q\tSilent mode");
-                    logInfo(L"/q1\tDon't show files which are hard linked");
-                    logInfo(L"/r\tRuns recursively through the given folder list");
-                    logInfo(L"/s\tProcess system files");
-                    logInfo(L"/t\tTime + Date of files must match");
-                    logInfo(L"/v\tVerbose mode");
-                    logInfo(L"/w\tShow statistics after processing");
+                    //logInfo(  L"/l\tHard links for files. If not specified, tool will just read (test) for duplicates");
+                    logInfo(  L"  /l\tCreate hard >links for files (default is just read/test for duplicates)"); // 2012-01-23  HaSchm
+                    logInfo(L"");
+                    logInfo(  L"  /r\tRuns >recursively through the given folder list");
+                    logInfo(  L"  /i\tProcess recursively, but every level >individually");
+                    logInfo(  L"  /j\tAlso follow >junctions (=reparse points) in file system");
+                    logInfo(L"");
+                    logInfo(  L"  /m\tAlso process s>mall files <1024 bytes, they are skipped by default");
+                    logInfo(  L"  /h\tProcess >hidden files");
+                    logInfo(  L"  /s\tProcess >system files");
+                    logInfo(  L"  /a\tFile >attributes must match for linking (expect Archive)");
+                    logInfo(  L"  /n\tFile >names must match for linking");
+                    logInfo(  L"  /t\t>Time + Date of files must match");
+                    logInfo(L"");
+                    logInfo(  L"  /q\t>Quite mode");
+                    logInfo(  L"  /v\t>Verbose mode");
+                    logInfo(  L"  /d\t>Debug mode");
+                    logInfo(  L"  /e\tWrite >error messages to standard output (not stderr)");  /* 2012-10-15  HaSchm */
+                    logInfo(  L"  /o\tList duplicate file result to std>out (for use without /l, /q)");
+                    logInfo(  L"  /q1\tDon't show files which are hard linked (alias /NoFileName)");
+                    //logInfo(  L"/NoFileName\tDon't show files which are hard linked");
+                    logInfo(  L"  /w\tSho>w statistics after processing");
+                    logInfo(L"");
+                    logInfo(  L"  /?\tShows this help screen");
+                    logInfo(L"");
+                    logInfo(  L"Program ExitCodes (%%Errorlevel%%):");
+                    logInfo(  L"  0 - Success");
+                    logInfo(  L"  1 - Invalid command line arguments");
+                    logInfo(L"");
+                    logInfo(L"Example:");
+                    logInfo(L"  %s /l /hs .", programName);
+
+
                     throw L""; //just to terminate the program...
                     break;
+
+             // options to disable simulation 
+                case 'l':
+                  reallyLink = true;
+                  break;
+
+
+             // options for Tree travel
+                case 'r':
+                  prog->setRecursive(true);
+                  break;
+
+                case 'i':
+                  prog->boLevelIndividually = true;
+                  prog->setRecursive(true);
+                  break;
+
+                case 'j':
+                  prog->setFollowJunctions(true);
+                  break;
+
+             // Filter options
+                case 'm':
+                  prog->setSmallFiles(true);
+                  break;
+
+                case 'h':
+                  prog->setHiddenFiles(true);
+                  break;
+
+                case 's':
+                  prog->setSystemFiles(true);
+                  break;
+
                 case 'a':
                     prog->setAttributeMustMatch(true);
                     break;
+                case 'n':
+                  prog->vSetNameMustMatch(true);  /* 2012-10-22  HaSchm */
+                  break;
+
+                case 't':
+                  prog->setDateMatch(true);
+                  break;
+
+
+             // Log options
+                case 'q':
+                  setLogLevel(LOG_ERROR);
+                  break;
+
+                case 'v':
+                  setLogLevel(LOG_VERBOSE);
+                  break;
+
                 case 'd':
                     setLogLevel(LOG_DEBUG);
                     break;
+
                 case 'e':  /* 2012-10-15  HaSchm */
                     boNoStdErr = true;
                     break;
-                case 'h':
-                    prog->setHiddenFiles(true);
-                    break;
-                case 'i':
-                    prog->boLevelIndividually = true;
-                    prog->setRecursive(true);
-                    break;
-                case 'j':
-                    prog->setFollowJunctions(true);
-                    break;
-                case 'l':
-                    reallyLink = true;
-                    break;
-                case 'm':
-                    prog->setSmallFiles(true);
-                    break;
-                case 'n':
-                    prog->vSetNameMustMatch(true);  /* 2012-10-22  HaSchm */
-                    break;
+
                 case 'o':
                     outputList = true;
                     break;
-                case 'q':
-                    setLogLevel(LOG_ERROR);
-                    break;
-                case 'r':
-                    prog->setRecursive(true);
-                    break;
-                case 's':
-                    prog->setSystemFiles(true);
-                    break;
-                case 't':
-                    prog->setDateMatch(true);
-                    break;
-                case 'v':
-                    setLogLevel(LOG_VERBOSE);
-                    break;
+
                 case 'w':
                     showStatistics = true;
                     break;
-                default:
-                    logError(L"Illegal Command line option! Use /? to see valid options!");
-                    return false;
-                }
-            } /* if (strlen(argv[i]) == 2 */
-            else if (stricmp(&argv[i][1],"NoFileName")==0
-                  || strcmp(&argv[i][1],"q1")==0) {
-                    boNoFileNameLog = true;  /* 2012-10-12  HaSchm */
-            }
-            else {
 
-                logError(L"Illegal Command line option! Use /? to see valid options!");
-                return false;
-            }
-        } else {
-            // the command line options seems to be a path...
+                default:
+                    logError(L"'%s' is an illegal command line option!"
+                              "  Use /? to see valid options!", option);
+                    return false;
+                } // switch one-char-option
+              } //while one-char-options
+            }  //else one vs longer options
+          } else {// if isArgAnOption
+         // the command line options seems to be a path...
             WCHAR tmpPath[MAX_PATH_LENGTH];
             mbstowcs(tmpPath,argv[i],sizeof(tmpPath));
 
-            // check if the path is existing!
+         // check if the path is existing!
             WCHAR DirSpec[MAX_PATH_LENGTH];  // directory specification
             wcsncpy(DirSpec, tmpPath, wcslen(tmpPath)+1);
             wcsncat(DirSpec, L"\\*", 3);
@@ -1162,37 +1271,37 @@ int main(int argc, char* argv[]) {
         logInfo(L"");
         logInfo(L"Processing statistics:");
         Statistics* s = Statistics::getInstance();
-        logInfo(L"Number of file comparisons %I64i (%0.4g)", s->i64FileCompares, 1.0*s->i64FileCompares);
-        logInfo(L"Number of file comparisons using a hash: %I64i", s->i64HashCompares);
-        logInfo(L"Number of file comparisons using a hash, both hashes were available before: %I64i", s->i64HashComparesHit1);
+        logInfo(L"Number of file comparisons %I64i ( %s )",               s->i64FileCompares, pretty_number( s->i64FileCompares) );
+        logInfo(L"Number of file comparisons using a hash: %I64i",        s->i64HashCompares);
+        logInfo(L"Number of file comparisons using a hash, both hashes were available before: %I64i",   s->i64HashComparesHit1  );
         /* Note: Since hash is checked before meta data, values for i64HashComparesHit1,
                  i64FileNameMismatch, i64FileAttributeMismatch and i64FileMTimeMismatch
                  depend on (more or less random) sequence of compares. */
-        logInfo(L"Number of file comparisons using a hash, one hash was missing before: %I64i", s->i64HashComparesHit2);
-        logInfo(L"Number of file comparisons using a hash, both hashes were missing before: %I64i", s->i64HashComparesHit3);
+        logInfo(L"Number of file comparisons using a hash, one hash was missing before: %I64i",         s->i64HashComparesHit2  );
+        logInfo(L"Number of file comparisons using a hash, both hashes were missing before: %I64i",     s->i64HashComparesHit3  );
         /* logInfo(L"File meta data not matching: %I64i", s->i64FileMetaDataMismatch);  2012-10-12  HaSchm */
-        if (s->i64FileNameMismatch!=0) logInfo(L"File names not matching: %I64i", s->i64FileNameMismatch);
-        if (s->i64FileAttributeMismatch!=0) logInfo(L"File attributes not matching: %I64i", s->i64FileAttributeMismatch);
-        if (s->i64FileMTimeMismatch!=0) logInfo(L"File modification time not matching: %I64i", s->i64FileMTimeMismatch);
+        if (s->i64FileNameMismatch!=0) logInfo(L"File names not matching: %I64i",                       s->i64FileNameMismatch  );
+        if (s->i64FileAttributeMismatch!=0) logInfo(L"File attributes not matching: %I64i",             s->i64FileAttributeMismatch );
+        if (s->i64FileMTimeMismatch!=0) logInfo(L"File modification time not matching: %I64i",          s->i64FileMTimeMismatch );
         logInfo(L"Files were already linked: %I64i", s->i64FileAlreadyLinked);
-        logInfo(L"Files content differed in first %i bytes: %I64i", FIRST_BLOCK_SIZE, s->i64FileContentDifferFirstBlock);
-        logInfo(L"Files content differ after %i bytes: %I64i", FIRST_BLOCK_SIZE, s->i64FileContentDifferLater);
-        logInfo(L"Files content is same: %I64i", s->i64FileContentSame);
-        logInfo(L"File compare problems: %i", s->fileCompareProblems);
-        logInfo(L"Directory open problems: %i", s->directoryOpenProblems);  /* 2012-10-16  HaSchm */
-        logInfo(L"Number of file hashes calculated: %I64i", s->i64HashesCalculated);
-        logInfo(L"Number of directories found: %i (incl. %i junctions)", s->directoriesFound, s->junctionsFound);
-        logInfo(L"Number of files found: %I64i (%0.4g), incl. %I64i (%0.4g) h or s files", s->i64FilesFound, 1.0*s->i64FilesFound, s->i64HSFilesFound, 1.0*s->i64HSFilesFound);
-        logInfo(L"Number of files which were filtered by size: %I64i (%0.4g), %I64i (%0.4g) bytes", s->i64FileTooSmall, 1.0*s->i64FileTooSmall, s->i64TotalSmallFileSize, 1.0*s->i64TotalSmallFileSize);
-        logInfo(L"Number of bytes read from disk: %I64i (%0.4g)", s->i64BytesRead, 1.0*s->i64BytesRead);
-        logInfo(L"Number of files opened: %I64i (%0.4g)", s->i64FilesOpened, 1.0*s->i64FilesOpened);
+        logInfo(L"Files content differed in first %i bytes: %I64i",             FIRST_BLOCK_SIZE,       s->i64FileContentDifferFirstBlock);
+        logInfo(L"Files content differ after %i bytes: %I64i", FIRST_BLOCK_SIZE,  s->i64FileContentDifferLater  );
+        logInfo(L"Files content is same: %I64i",                                  s->i64FileContentSame );
+        logInfo(L"File compare problems: %i",                                     s->fileCompareProblems  );
+        logInfo(L"Directory open problems: %i",                                   s->directoryOpenProblems  );  /* 2012-10-16  HaSchm */
+        logInfo(L"Number of file hashes calculated: %I64i",                       s->i64HashesCalculated  );
+        logInfo(L"Number of directories found: %i (incl. %i junctions)",          s->directoriesFound,  s->junctionsFound  );
+        logInfo(L"Number of files found: %I64i ( %s ), incl. %I64i ( %s ) h or s files",            s->i64FilesFound,   pretty_number( s->i64FilesFound),  s->i64HSFilesFound, pretty_number2( s->i64HSFilesFound) );
+        logInfo(L"Number of files which were filtered by size: %I64i ( %s ), %I64i ( %sB ) bytes",   s->i64FileTooSmall, pretty_number( s->i64FileTooSmall), s->i64TotalSmallFileSize, pretty_number2( s->i64TotalSmallFileSize) );
+        logInfo(L"Number of bytes read from disk: %I64i ( %s )",                                  s->i64BytesRead,    pretty_number( s->i64BytesRead) );
+        logInfo(L"Number of files opened: %I64i ( %s )",                                          s->i64FilesOpened,  pretty_number(s->i64FilesOpened) );
         #ifdef _DEBUG
-            logInfo(L"Number of files closed: %I64i (%0.4g)", s->i64FilesClosed, 1.0*s->i64FilesClosed);
+            logInfo(L"Number of files closed: %I64i ( %s )",      s->i64FilesClosed, pretty_number( s->i64FilesClosed) );
         #endif
-        logInfo(L"Number of file open problems: %i", s->fileOpenProblems);
-        logInfo(L"Number of successful hard link generations: %I64i (%0.4g)", s->i64HardLinksSuccess, 1.0*s->i64HardLinksSuccess);
-        logInfo(L"Number of hard link generation errors: %I64i", (s->i64HardLinks-s->i64HardLinksSuccess));
-        logInfo(L"Number of bytes saved: %I64i (%0.4g)", s->i64BytesSaved, 1.0*s->i64BytesSaved);  /* 2012-10-12  HaSchm */
+        logInfo(L"Number of file open problems: %i",              s->fileOpenProblems);
+        logInfo(L"Number of successful hard link generations: %I64i ( %s )", s->i64HardLinksSuccess, pretty_number( s->i64HardLinksSuccess) );
+        logInfo(L"Number of hard link generation errors: %I64i",             s->i64HardLinks-s->i64HardLinksSuccess  );
+        logInfo(L"Number of bytes saved: %I64i ( %sB )",                      s->i64BytesSaved, pretty_number( s->i64BytesSaved) );  /* 2012-10-12  HaSchm */
         #ifdef _DEBUG
             logInfo(L"Path objects created: %i", s->pathObjCreated);
             logInfo(L"Path objects destroyed: %i", s->pathObjDestroyed);

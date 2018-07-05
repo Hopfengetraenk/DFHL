@@ -20,7 +20,10 @@ Todo:
 - Option to skip content comparison if size, hash, name, attributes and
   time match?
 
-
+2018-07-05  Djamana
+- optimised commandline parser support fot combining options like for ex. /hs
+- reordered options output in helpscreen
+- Added pretty print for bytes so now we've KB, MB, GB...
 
 2012-10-22  BDK/HS
 - "release-2-5-DFHL-HS"
