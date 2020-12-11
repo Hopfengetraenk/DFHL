@@ -26,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdarg.h>
 #include "Util.h"
 #include "FileSystem.h"
-#include "Hardlink.h"
 
 #ifndef INVALID_SET_FILE_POINTER
   #define INVALID_SET_FILE_POINTER  0xFFFFFFFF  /* missing in MS-VC 6.0 !? */
@@ -247,13 +246,6 @@ FileSystem::FileSystem() {
     hiddenFiles = false;
     systemFiles = false;
 
-    // Iinit the Hard Linking functionality in NT4.0
-    if(!Hardlink_Initialize())
-    {
-        // Error ... probably not on NT/2000/XP or any other NT system ...
-        logError(ERROR_CALL_NOT_IMPLEMENTED, L"Could not initialize required functions!\n");
-        logInfo(L"NOTE: You need to run this program in Windows NT 4.0 or greater!");
-    }
 }
 
 FileSystem::~FileSystem() {
